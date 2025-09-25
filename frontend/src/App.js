@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import DetectionForm from './components/DetectionForm';
+import ContentPlayground from './components/ContentPlayground';
+import Sidebar from './components/Sidebar';
+import Dashboard from './components/Dashboard';
+import { Datasets, Reports, Settings } from './components/PlaceholderComponents';
+import RedditCollector from './components/RedditCollector';
 
 function App() {
   const [backendStatus, setBackendStatus] = useState('Connecting...');
   const [healthData, setHealthData] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
     // Test connection to Python FastAPI backend on port 9000
@@ -33,52 +39,107 @@ function App() {
     }
   };
 
-  return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Weapons Trade Detection System</h1>
-        <p>Academic Research Platform - Python Backend</p>
-        
-        <div style={{
-          margin: '20px',
-          padding: '15px',
-          border: '1px solid #ccc',
-          borderRadius: '8px',
-          backgroundColor: isConnected ? '#d4edda' : '#f8d7da',
-          color: '#000'
+  const renderContent = () => {
+    if (!isConnected) {
+      return (
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          minHeight: '100vh',
+          padding: '20px'
         }}>
-          <strong>Backend Status:</strong> {backendStatus}
+          <h1 style={{ color: '#1f2937', marginBottom: '20px' }}>
+            Weapons Trade Detection System
+          </h1>
+          <p style={{ color: '#6b7280', marginBottom: '30px' }}>
+            Academic Research Platform - Python Backend
+          </p>
           
-          {healthData && (
-            <div style={{ marginTop: '10px', textAlign: 'left' }}>
-              <p>Service: {healthData.service}</p>
-              <p>Version: {healthData.version}</p>
-              <p>Python: {healthData.python_version}</p>
-              <p>Status: {healthData.status}</p>
-            </div>
-          )}
+          <div style={{
+            padding: '20px',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            backgroundColor: '#fef2f2',
+            color: '#1f2937',
+            maxWidth: '500px',
+            textAlign: 'center'
+          }}>
+            <strong>Backend Status:</strong> {backendStatus}
+            <br />
+            <p style={{ marginTop: '10px', fontSize: '14px', color: '#6b7280' }}>
+              Please ensure your Python backend is running on port 9000
+            </p>
+          </div>
         </div>
+      );
+    }
 
-        {isConnected && (
-          <button 
-            onClick={testAPI}
-            style={{
-              padding: '10px 20px',
-              fontSize: '16px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              margin: '10px'
-            }}
-          >
-            Test API Connection
-          </button>
-        )}
+    switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'analysis':
+        return (
+          <div style={{ padding: '30px' }}>
+            <h2 style={{ color: '#1f2937', marginBottom: '30px' }}>
+              Content Analysis
+            </h2>
+            <DetectionForm />
+          </div>
+        );
+      case 'playground':
+        return <ContentPlayground />;
+      case 'reddit':
+        return <RedditCollector />;
+      case 'datasets':
+        return <Datasets />;
+      case 'reports':
+        return <Reports />;
+      case 'settings':
+        return <Settings />;
+      default:
+        return <Dashboard />;
+    }
+  };
 
-        {isConnected && <DetectionForm />}
-      </header>
+  return (
+    <div className="App" style={{ display: 'flex', minHeight: '100vh' }}>
+      {isConnected && (
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      )}
+      
+      <main style={{ 
+        marginLeft: isConnected ? '250px' : '0',
+        flex: 1,
+        backgroundColor: '#f9fafb',
+        minHeight: '100vh'
+      }}>
+        {renderContent()}
+      </main>
+
+      {/* Floating API Test Button (when connected) */}
+      {isConnected && (
+        <button 
+          onClick={testAPI}
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            padding: '10px 15px',
+            fontSize: '12px',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            zIndex: 1000
+          }}
+        >
+          Test API
+        </button>
+      )}
     </div>
   );
 }

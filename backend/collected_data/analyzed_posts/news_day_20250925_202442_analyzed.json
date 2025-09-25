@@ -1,0 +1,94 @@
+{
+  "analysis_info": {
+    "analyzed_at": "2025-09-25T20:24:42.906669",
+    "total_posts": 3,
+    "high_risk_posts": 3,
+    "medium_risk_posts": 0,
+    "low_risk_posts": 0,
+    "academic_disclaimer": "ACADEMIC RESEARCH DATA COLLECTION\n        This data is collected for legitimate academic research purposes only.\n        All data handling follows academic ethics guidelines and privacy laws."
+  },
+  "high_risk_posts": [
+    {
+      "id": "1npkked",
+      "title": "Oklahoma official says all high schools will have Turning Point chapters after Charlie Kirk killing | Oklahoma",
+      "content": "",
+      "subreddit": "news",
+      "author_hash": "57d7086fa95acd6f",
+      "score": 12595,
+      "num_comments": 1644,
+      "created_utc": 1758739856.0,
+      "url": "https://reddit.com/r/news/comments/1npkked/oklahoma_official_says_all_high_schools_will_have/",
+      "collected_at": "2025-09-25T20:24:38.390188",
+      "risk_analysis": {
+        "risk_score": 0.8,
+        "confidence": 0.9,
+        "flags": [
+          "HIGH RISK: Detected violence keyword 'kill'",
+          "HIGH RISK: Detected violence keyword 'off'"
+        ],
+        "detected_keywords": [
+          "violence: kill, off"
+        ],
+        "detected_patterns": [],
+        "analysis_time": "2025-09-25T20:24:42.905408"
+      }
+    },
+    {
+      "id": "1npmbw2",
+      "title": "'Anti-ICE' message on ammunition at Dallas shooting that killed two immigration detainees",
+      "content": "",
+      "subreddit": "news",
+      "author_hash": "0be779fedd748b92",
+      "score": 4925,
+      "num_comments": 1634,
+      "created_utc": 1758743934.0,
+      "url": "https://reddit.com/r/news/comments/1npmbw2/antiice_message_on_ammunition_at_dallas_shooting/",
+      "collected_at": "2025-09-25T20:24:39.895228",
+      "risk_analysis": {
+        "risk_score": 1.0,
+        "confidence": 0.9,
+        "flags": [
+          "HIGH RISK: Detected firearms keyword 'ammunition'",
+          "HIGH RISK: Detected violence keyword 'kill'",
+          "HIGH RISK: Detected violence keyword 'shoot'",
+          "HIGH RISK: Detected violence keyword 'shooting'",
+          "HIGH RISK: Detected violence keyword 'ice'",
+          "CRITICAL: Weapon + violence intent detected"
+        ],
+        "detected_keywords": [
+          "firearms: ammunition",
+          "violence: kill, shoot, shooting, ice"
+        ],
+        "detected_patterns": [],
+        "analysis_time": "2025-09-25T20:24:42.906088"
+      }
+    },
+    {
+      "id": "1npu3tj",
+      "title": "New York woman accused of incapacitating 4 men with fentanyl-laced drugs, killing 3 of them",
+      "content": "",
+      "subreddit": "news",
+      "author_hash": "0bc79c9779cad86a",
+      "score": 1605,
+      "num_comments": 170,
+      "created_utc": 1758764142.0,
+      "url": "https://reddit.com/r/news/comments/1npu3tj/new_york_woman_accused_of_incapacitating_4_men/",
+      "collected_at": "2025-09-25T20:24:41.400267",
+      "risk_analysis": {
+        "risk_score": 0.8,
+        "confidence": 0.9,
+        "flags": [
+          "HIGH RISK: Detected violence keyword 'kill'",
+          "HIGH RISK: Detected violence keyword 'cap'"
+        ],
+        "detected_keywords": [
+          "violence: kill, cap"
+        ],
+        "detected_patterns": [],
+        "analysis_time": "2025-09-25T20:24:42.906149"
+      }
+    }
+  ],
+  "medium_risk_posts": [],
+  "low_risk_posts": []
+}

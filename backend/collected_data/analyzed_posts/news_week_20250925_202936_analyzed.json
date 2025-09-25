@@ -1,0 +1,62 @@
+{
+  "analysis_info": {
+    "analyzed_at": "2025-09-25T20:29:36.768149",
+    "total_posts": 2,
+    "high_risk_posts": 2,
+    "medium_risk_posts": 0,
+    "low_risk_posts": 0,
+    "academic_disclaimer": "ACADEMIC RESEARCH DATA COLLECTION\n        This data is collected for legitimate academic research purposes only.\n        All data handling follows academic ethics guidelines and privacy laws."
+  },
+  "high_risk_posts": [
+    {
+      "id": "1noz8vs",
+      "title": "Explosions and drones targeting Gaza aid flotilla boats, activists say",
+      "content": "",
+      "subreddit": "news",
+      "author_hash": "4cbff04fecbd44af",
+      "score": 971,
+      "num_comments": 84,
+      "created_utc": 1758676915.0,
+      "url": "https://reddit.com/r/news/comments/1noz8vs/explosions_and_drones_targeting_gaza_aid_flotilla/",
+      "collected_at": "2025-09-25T20:29:33.028440",
+      "risk_analysis": {
+        "risk_score": 0.7,
+        "confidence": 0.9,
+        "flags": [
+          "HIGH RISK: Detected violence keyword 'target'"
+        ],
+        "detected_keywords": [
+          "violence: target"
+        ],
+        "detected_patterns": [],
+        "analysis_time": "2025-09-25T20:29:36.767002"
+      }
+    },
+    {
+      "id": "1noui7q",
+      "title": "Student reportedly expelled for disarming classmate with a gun, mother calls him a hero",
+      "content": "",
+      "subreddit": "news",
+      "author_hash": "e006a86116d47efc",
+      "score": 18198,
+      "num_comments": 727,
+      "created_utc": 1758664148.0,
+      "url": "https://reddit.com/r/news/comments/1noui7q/student_reportedly_expelled_for_disarming/",
+      "collected_at": "2025-09-25T20:29:34.782366",
+      "risk_analysis": {
+        "risk_score": 0.8,
+        "confidence": 0.9,
+        "flags": [
+          "HIGH RISK: Detected firearms keyword 'gun'"
+        ],
+        "detected_keywords": [
+          "firearms: gun"
+        ],
+        "detected_patterns": [],
+        "analysis_time": "2025-09-25T20:29:36.767659"
+      }
+    }
+  ],
+  "medium_risk_posts": [],
+  "low_risk_posts": []
+}

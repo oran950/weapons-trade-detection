@@ -3,16 +3,32 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, List, Any, Optional
+from pydantic import BaseModel, Field
+
 from detection.text_analyzer import WeaponsTextAnalyzer
+import sys
+import os
+
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+# Import configuration
+from config import AppConfig
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from generation.content_generator import SyntheticContentGenerator, ContentParameters
 
 # Create FastAPI app
 app = FastAPI(
     title="Weapons Detection API",
     description="Academic research system for detecting illegal weapons trade patterns",
-    version="1.0.0",
+    version="2.1.0",
 )
+
+# Initialize components
 analyzer = WeaponsTextAnalyzer()
+content_generator = SyntheticContentGenerator()
 
 # CORS middleware
 app.add_middleware(
@@ -23,27 +39,72 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Pydantic models for API requests
+class ContentGenerationRequest(BaseModel):
+    content_type: str = Field(..., description="Type of content to generate", pattern="^(post|message|ad|forum)$")
+    intensity_level: str = Field(..., description="Intensity level", pattern="^(low|medium|high)$")
+    quantity: int = Field(default=1, ge=1, le=50, description="Number of items to generate")
+    language: str = Field(default="en", description="Language code")
+    include_contact: bool = Field(default=False, description="Include contact information")
+    include_pricing: bool = Field(default=False, description="Include pricing information")
+
+class BatchGenerationRequest(BaseModel):
+    quantity_per_type: int = Field(default=5, ge=1, le=20, description="Items per content type")
+    include_contact: bool = Field(default=False, description="Include contact information")
+    include_pricing: bool = Field(default=False, description="Include pricing information")
+
+# Reddit collection models (updated for multiple subreddits)
+class RedditCollectionParams(BaseModel):
+    subreddits: List[str] = Field(default=["news"], description="List of subreddits to collect from")
+    timeFilter: str = Field(default="day", description="Time filter for posts")
+    sortMethod: str = Field(default="hot", description="Sort method for posts")
+    limit_per_subreddit: int = Field(default=25, ge=1, le=50, description="Number of posts per subreddit")
+    keywords: str = Field(default="", description="Keywords to search for")
+    include_all_defaults: bool = Field(default=False, description="Include default subreddit list")
+
+class RedditCollectionRequest(BaseModel):
+    parameters: RedditCollectionParams
+
+# Initialize Reddit collector
+def init_reddit_collector():
+    """Initialize Reddit collector when needed"""
+    try:
+        from reddit.reddit_collector import AcademicRedditCollector
+        return AcademicRedditCollector
+    except ImportError:
+        return None
+
 # Root endpoint
 @app.get("/")
 async def root():
-    return {"message": "Weapons Detection API is running!"}
+    return {"message": "Weapons Detection API v2.1 is running!"}
 
-# Health check endpoint - THIS WAS MISSING
+# Health check endpoint
 @app.get("/health")
 async def health_check():
     return {
         "status": "OK",
         "service": "Weapons Detection API",
-        "version": "1.0.0",
+        "version": "2.1.0",
         "timestamp": datetime.now().isoformat(),
-        "python_version": "3.13"
+        "python_version": "3.13",
+        "reddit_configured": AppConfig.reddit.is_configured()
     }
 
 @app.get("/api")
 async def api_info():
     return {
         "message": "Weapons Detection API endpoints",
-        "endpoints": ["/health", "/api", "/api/test"]
+        "endpoints": [
+            "/health", 
+            "/api", 
+            "/api/test", 
+            "/api/detection/analyze", 
+            "/api/generation/content",
+            "/api/generation/batch",
+            "/api/reddit/collect",
+            "/api/reddit/config-status"
+        ]
     }
 
 @app.get("/api/test")
@@ -51,9 +112,11 @@ async def test_endpoint():
     return {
         "message": "API test successful!",
         "status": "working",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "reddit_ready": AppConfig.reddit.is_configured()
     }
 
+# Detection endpoints
 @app.post("/api/detection/analyze")
 async def analyze_content(request: Dict[str, Any]):
     content = request.get("content", "")
@@ -61,10 +124,8 @@ async def analyze_content(request: Dict[str, Any]):
     if not content:
         raise HTTPException(status_code=400, detail="No content provided")
     
-    # Run analysis
     analysis_results = analyzer.analyze_text(content)
     
-    # Determine risk level
     risk_score = analysis_results['risk_score']
     if risk_score >= 0.7:
         risk_level = "HIGH"
@@ -88,10 +149,385 @@ async def analyze_content(request: Dict[str, Any]):
         "timestamp": analysis_results['analysis_time']
     }
 
+# Content generation endpoints
+@app.post("/api/generation/content")
+async def generate_content(request: ContentGenerationRequest):
+    """Generate synthetic content for academic research"""
+    try:
+        params = ContentParameters(
+            content_type=request.content_type,
+            intensity_level=request.intensity_level,
+            quantity=request.quantity,
+            language=request.language,
+            include_contact=request.include_contact,
+            include_pricing=request.include_pricing
+        )
+        
+        generated_content = content_generator.generate_content(params)
+        
+        return {
+            "status": "success",
+            "generated_count": len(generated_content),
+            "content": generated_content,
+            "parameters": request.dict(),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Content generation failed: {str(e)}")
 
+@app.post("/api/generation/batch")
+async def generate_batch_content(request: BatchGenerationRequest):
+    """Generate a batch of content across all types and intensities"""
+    try:
+        batch_config = {
+            "quantity_per_type": request.quantity_per_type,
+            "include_contact": request.include_contact,
+            "include_pricing": request.include_pricing
+        }
+        
+        batch_results = content_generator.generate_batch(batch_config)
+        
+        return {
+            "status": "success",
+            "batch_results": batch_results,
+            "configuration": batch_config,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Batch generation failed: {str(e)}")
 
+@app.get("/api/generation/templates")
+async def get_generation_templates():
+    """Get available templates and vocabulary for content generation"""
+    return {
+        "content_types": ["post", "message", "ad", "forum"],
+        "intensity_levels": ["low", "medium", "high"],
+        "vocabulary_sample": {
+            "low": content_generator.vocabulary["low"],
+            "medium": content_generator.vocabulary["medium"],
+            "high": content_generator.vocabulary["high"]
+        },
+        "platform_styles": content_generator.platform_styles,
+        "supported_languages": ["en"],
+        "max_quantity": 50
+    }
 
+# Reddit collection endpoints (updated for backend configuration)
+@app.post("/api/reddit/collect")
+async def collect_reddit_data(request: RedditCollectionRequest):
+    """
+    Collect Reddit data for academic research using configured credentials
+    """
+    try:
+        # Check if Reddit is configured
+        if not AppConfig.reddit.is_configured():
+            missing_config = AppConfig.reddit.get_missing_config()
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Reddit API not configured. Missing: {', '.join(missing_config)}. Please check your .env file."
+            )
+        
+        # Import collector class
+        AcademicRedditCollector = init_reddit_collector()
+        if not AcademicRedditCollector:
+            raise HTTPException(
+                status_code=500, 
+                detail="Reddit collector not available. Please install required dependencies: pip install praw"
+            )
+        
+        # Initialize collector with configured credentials
+        collector = AcademicRedditCollector(
+            client_id=AppConfig.reddit.CLIENT_ID,
+            client_secret=AppConfig.reddit.CLIENT_SECRET,
+            user_agent=AppConfig.reddit.USER_AGENT
+        )
+        
+        # Run collection in thread pool to avoid blocking
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            collected_posts = await loop.run_in_executor(
+                executor,
+                collect_and_analyze_posts,
+                collector,
+                request.parameters
+            )
+        
+        return {
+            "status": "success",
+            "message": f"Multi-subreddit Reddit data collection completed from {len(collected_posts.get('subreddits_collected', []))} subreddits",
+            "total_collected": len(collected_posts.get("all_posts", [])),
+            "high_risk_count": len(collected_posts.get("high_risk_posts", [])),
+            "medium_risk_count": len(collected_posts.get("medium_risk_posts", [])),
+            "low_risk_count": len(collected_posts.get("low_risk_posts", [])),
+            "saved_files": collected_posts.get("saved_files", []),
+            "collection_timestamp": datetime.now().isoformat(),
+            "configured_with_credentials": True,
+            "collection_summary": collected_posts.get("collection_summary", {}),
+            "subreddits_collected": collected_posts.get("subreddits_collected", [])
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Reddit collection failed: {str(e)}"
+        )
 
+def collect_and_analyze_posts(collector, params):
+    """
+    Helper function to collect and analyze Reddit posts from multiple subreddits
+    This runs in a separate thread to avoid blocking the main FastAPI thread
+    """
+    try:
+        all_collected_posts = []
+        collection_summary = {}
+        
+        # Default subreddit list for comprehensive coverage
+        default_subreddits = [
+            "news", "worldnews", "politics", "PublicFreakout", "Conservative", 
+            "liberal", "conspiracy", "AskReddit", "technology", "science",
+            "todayilearned", "explainlikeimfive", "changemyview", "unpopularopinion",
+            "legaladvice", "relationship_advice", "amitheasshole", "offmychest"
+        ]
+        
+        # Determine which subreddits to collect from
+        if params.include_all_defaults:
+            subreddits_to_collect = default_subreddits
+        else:
+            subreddits_to_collect = params.subreddits
+        
+        print(f"Collecting from {len(subreddits_to_collect)} subreddits: {subreddits_to_collect}")
+        
+        # Collect from each subreddit
+        for subreddit in subreddits_to_collect:
+            try:
+                print(f"Collecting from r/{subreddit}...")
+                
+                if params.keywords:
+                    # Search for specific keywords
+                    keywords = [k.strip() for k in params.keywords.split(',')]
+                    collected_posts = collector.search_posts_by_keywords(
+                        subreddit_name=subreddit,
+                        keywords=keywords,
+                        time_filter=params.timeFilter,
+                        limit=params.limit_per_subreddit
+                    )
+                else:
+                    # General collection from subreddit
+                    collected_posts = collector.collect_subreddit_posts(
+                        subreddit_name=subreddit,
+                        time_filter=params.timeFilter,
+                        limit=params.limit_per_subreddit,
+                        sort_method=params.sortMethod
+                    )
+                
+                all_collected_posts.extend(collected_posts)
+                collection_summary[subreddit] = len(collected_posts)
+                
+                print(f"Collected {len(collected_posts)} posts from r/{subreddit}")
+                
+            except Exception as e:
+                print(f"Error collecting from r/{subreddit}: {str(e)}")
+                collection_summary[subreddit] = 0
+                continue
+        
+        if not all_collected_posts:
+            return {
+                "all_posts": [],
+                "high_risk_posts": [],
+                "medium_risk_posts": [],
+                "low_risk_posts": [],
+                "saved_files": [],
+                "collection_summary": collection_summary
+            }
+        
+        print(f"Total collected: {len(all_collected_posts)} posts from {len(subreddits_to_collect)} subreddits")
+        
+        # Analyze collected posts using existing analyzer
+        analyzed_posts = collector.analyze_collected_posts(all_collected_posts, analyzer)
+        
+        # Generate filename based on parameters
+        if params.include_all_defaults:
+            filename = f"multi_all_defaults_{params.timeFilter}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        else:
+            subreddit_names = "_".join(params.subreddits[:3])  # Limit filename length
+            if len(params.subreddits) > 3:
+                subreddit_names += f"_and_{len(params.subreddits)-3}_more"
+            filename = f"multi_{subreddit_names}_{params.timeFilter}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        # Save raw posts
+        collector.save_posts_to_json(all_collected_posts, f"{filename}_raw")
+        collector.save_posts_to_csv(all_collected_posts, f"{filename}_raw")
+        
+        # Save analyzed posts
+        analysis_summary = collector.save_analyzed_posts(analyzed_posts, filename)
+        
+        # Add collection summary to analysis
+        analysis_summary['collection_summary'] = collection_summary
+        analysis_summary['subreddits_collected'] = subreddits_to_collect
+        
+        # Prepare return data
+        saved_files = [
+            f"collected_data/raw_posts/{filename}_raw.json",
+            f"collected_data/raw_posts/{filename}_raw.csv",
+            f"collected_data/analyzed_posts/{filename}_analyzed.json"
+        ]
+        
+        return {
+            "all_posts": analyzed_posts,
+            "high_risk_posts": analysis_summary.get("high_risk_posts", []),
+            "medium_risk_posts": analysis_summary.get("medium_risk_posts", []),
+            "low_risk_posts": analysis_summary.get("low_risk_posts", []),
+            "saved_files": saved_files,
+            "collection_summary": collection_summary,
+            "subreddits_collected": subreddits_to_collect
+        }
+        
+    except Exception as e:
+        raise Exception(f"Multi-subreddit collection and analysis failed: {str(e)}")
+
+@app.get("/api/reddit/config-status")
+async def reddit_config_status():
+    """Check Reddit API configuration status"""
+    return {
+        "is_configured": AppConfig.reddit.is_configured(),
+        "missing_config": AppConfig.reddit.get_missing_config(),
+        "user_agent": AppConfig.reddit.USER_AGENT if AppConfig.reddit.USER_AGENT else "Not configured",
+        "rate_limit_delay": AppConfig.reddit.RATE_LIMIT_DELAY,
+        "max_posts_per_request": AppConfig.reddit.MAX_POSTS_PER_REQUEST,
+        "data_directory": AppConfig.DATA_DIR
+    }
+
+@app.get("/api/reddit/status")
+async def reddit_collector_status():
+    """Check if Reddit collector is available and configured"""
+    try:
+        # Check if collector can be imported
+        AcademicRedditCollector = init_reddit_collector()
+        collector_available = AcademicRedditCollector is not None
+        
+        # Check if data directories exist
+        data_dir_exists = os.path.exists(AppConfig.DATA_DIR)
+        raw_posts_dir = os.path.exists(os.path.join(AppConfig.DATA_DIR, "raw_posts"))
+        analyzed_posts_dir = os.path.exists(os.path.join(AppConfig.DATA_DIR, "analyzed_posts"))
+        
+        return {
+            "collector_available": collector_available,
+            "reddit_configured": AppConfig.reddit.is_configured(),
+            "data_directory_exists": data_dir_exists,
+            "raw_posts_directory": raw_posts_dir,
+            "analyzed_posts_directory": analyzed_posts_dir,
+            "required_dependencies": [
+                "praw (Python Reddit API Wrapper)",
+                "python-dotenv (Environment configuration)"
+            ],
+            "setup_status": "ready" if (collector_available and AppConfig.reddit.is_configured()) else "needs_setup"
+        }
+        
+    except Exception as e:
+        return {
+            "collector_available": False,
+            "reddit_configured": False,
+            "error": str(e),
+            "setup_status": "error"
+        }
+
+@app.get("/api/reddit/files")
+async def list_collected_files():
+    """List all collected Reddit data files"""
+    try:
+        files_info = {
+            "raw_files": [],
+            "analyzed_files": [],
+            "total_files": 0
+        }
+        
+        # Check raw posts directory
+        raw_dir = os.path.join(AppConfig.DATA_DIR, "raw_posts")
+        if os.path.exists(raw_dir):
+            raw_files = []
+            for filename in os.listdir(raw_dir):
+                if filename.endswith(('.json', '.csv')):
+                    file_path = os.path.join(raw_dir, filename)
+                    file_size = os.path.getsize(file_path)
+                    file_modified = os.path.getmtime(file_path)
+                    
+                    raw_files.append({
+                        "filename": filename,
+                        "size_bytes": file_size,
+                        "modified": datetime.fromtimestamp(file_modified).isoformat(),
+                        "path": file_path
+                    })
+            files_info["raw_files"] = raw_files
+        
+        # Check analyzed posts directory
+        analyzed_dir = os.path.join(AppConfig.DATA_DIR, "analyzed_posts")
+        if os.path.exists(analyzed_dir):
+            analyzed_files = []
+            for filename in os.listdir(analyzed_dir):
+                if filename.endswith('.json'):
+                    file_path = os.path.join(analyzed_dir, filename)
+                    file_size = os.path.getsize(file_path)
+                    file_modified = os.path.getmtime(file_path)
+                    
+                    analyzed_files.append({
+                        "filename": filename,
+                        "size_bytes": file_size,
+                        "modified": datetime.fromtimestamp(file_modified).isoformat(),
+                        "path": file_path
+                    })
+            files_info["analyzed_files"] = analyzed_files
+        
+        files_info["total_files"] = len(files_info["raw_files"]) + len(files_info["analyzed_files"])
+        
+        return files_info
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list files: {str(e)}")
+
+@app.get("/api/reddit/requirements")
+async def get_setup_requirements():
+    """Get setup requirements and instructions for Reddit collection"""
+    return {
+        "dependencies": {
+            "praw": {
+                "name": "Python Reddit API Wrapper",
+                "install_command": "pip install praw",
+                "version": ">=7.0.0",
+                "purpose": "Reddit API access"
+            },
+            "python-dotenv": {
+                "name": "Python Environment Variables",
+                "install_command": "pip install python-dotenv",
+                "version": ">=0.19.0",
+                "purpose": "Configuration management"
+            }
+        },
+        "setup_steps": [
+            "1. Install dependencies: pip install praw python-dotenv",
+            "2. Create .env file in backend directory",
+            "3. Add Reddit API credentials to .env file",
+            "4. Restart backend server",
+            "5. Check configuration status via /api/reddit/config-status"
+        ],
+        "env_file_example": {
+            "REDDIT_CLIENT_ID": "your_client_id_here",
+            "REDDIT_CLIENT_SECRET": "your_client_secret_here",
+            "REDDIT_USER_AGENT": "academic_research:weapons_detection:v2.0 (by /u/yourusername)"
+        },
+        "academic_requirements": [
+            "Institutional Review Board (IRB) approval",
+            "Compliance with Reddit Terms of Service",
+            "Proper data handling and privacy protection",
+            "Rate limiting and respectful API usage"
+        ],
+        "data_storage": {
+            "location": f"{AppConfig.DATA_DIR}/ directory in your project",
+            "formats": ["JSON", "CSV"],
+            "privacy": "Usernames are hashed for privacy protection"
+        }
+    }
 
 if __name__ == "__main__":
-    uvicorn.run("server:app", host="0.0.0.0", port=9000, reload=True)
+    uvicorn.run("server:app", host=AppConfig.HOST, port=AppConfig.PORT, reload=AppConfig.DEBUG)
