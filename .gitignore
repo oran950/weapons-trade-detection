@@ -1,3 +1,7 @@
-# In your project root directory
-echo ".env" >> .gitignore
-echo "collected_data/" >> .gitignore
+# Environment files
+.env
+*.env
+frontend/.env
+
+# Data directories
+collected_data/
