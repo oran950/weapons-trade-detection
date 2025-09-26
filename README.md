@@ -58,5 +58,7 @@ git push origin feature/crawler
 
 ```
 
-<img width="3840" height="2234" alt="Untitled diagram _ Mermaid Chart-2025-09-06-081441" src="https://github.com/user-attachments/assets/490bc3fc-830a-4751-9d4a-e105dac6d4ba" />
+
+
+https://github.com/user-attachments/assets/04e42ad9-809b-47de-b14c-519806b57c10
 
