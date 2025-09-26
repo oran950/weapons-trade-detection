@@ -19,6 +19,18 @@ from config import AppConfig
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from generation.content_generator import SyntheticContentGenerator, ContentParameters
 
+import json as _json
+import re as _re
+from typing import Tuple as _Tuple
+import requests as _requests
+from fastapi import Query as _Query
+
+# --- ENV / Config (uses your existing AppConfig where convenient) ---
+_LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
+_OLLAMA_BASE = os.getenv("OLLAMA_BASE", "http://localhost:11434")
+_OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+
+
 # Create FastAPI app
 app = FastAPI(
     title="Weapons Detection API",
@@ -38,6 +50,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+
+
+
 
 # Pydantic models for API requests
 class ContentGenerationRequest(BaseModel):
@@ -283,12 +298,23 @@ def collect_and_analyze_posts(collector, params):
         all_collected_posts = []
         collection_summary = {}
         
-        # Default subreddit list for comprehensive coverage
+        # Enhanced default subreddit list for comprehensive coverage
         default_subreddits = [
             "news", "worldnews", "politics", "PublicFreakout", "Conservative", 
             "liberal", "conspiracy", "AskReddit", "technology", "science",
             "todayilearned", "explainlikeimfive", "changemyview", "unpopularopinion",
-            "legaladvice", "relationship_advice", "amitheasshole", "offmychest"
+            "legaladvice", "relationship_advice", "amitheasshole", "offmychest",
+            "guns", "firearms", "CCW", "ar15", "ak47", "gundeals", "gunpolitics",
+            "progun", "liberalgunowners", "socialistRA", "weekendgunnit",
+            "Military", "army", "navy", "airforce", "marines", "veterans",
+            "EDC", "tacticalgear", "preppers", "survival", "bugout",
+            "combatfootage", "MilitaryPorn", "WarplanePorn", "TankPorn",
+            "Bad_Cop_No_Donut", "ProtectAndServe", "police", "security",
+            "Anarchism", "socialism", "communism", "capitalism", "libertarian",
+            "funny", "pics", "gaming", "movies", "books", "music", "sports",
+            "ukraine", "russia", "syriancivilwar", "geopolitics", "internationalnews",
+            "dankmemes", "memeeconomy", "politicalhumor", "darkhumor",
+            "IllegalLifeProTips", "UnethicalLifeProTips", "LifeProTips"
         ]
         
         # Determine which subreddits to collect from
@@ -528,6 +554,237 @@ async def get_setup_requirements():
             "privacy": "Usernames are hashed for privacy protection"
         }
     }
+
+
+
+
+
+# -----------------------------
+# LLM (Ollama) – non-invasive add-on
+# -----------------------------
+# --- Helpers ---
+def _llm_should_run(rule_risk: float, user_toggle: bool, always_if_toggled: bool = False) -> bool:
+    """
+    Decide whether to call LLM:
+      - user_toggle must be True
+      - if always_if_toggled: call regardless
+      - else triage band
+    """
+    if not user_toggle:
+        return False
+    if always_if_toggled:
+        return True
+    return 0.35 <= float(rule_risk) <= 0.75
+
+def _safe_json_parse(text: str) -> Dict[str, Any]:
+    """Try to parse strict JSON; fallback to first {...} blob."""
+    try:
+        return _json.loads(text)
+    except Exception:
+        pass
+    m = _re.search(r"\{[\s\S]*\}", text)
+    if m:
+        try:
+            return _json.loads(m.group(0))
+        except Exception:
+            pass
+    # fallback minimal object
+    return {
+        "final_label": "MEDIUM",
+        "risk_adjustment": 0.0,
+        "reasons": ["fallback-parser"],
+        "evidence_spans": [],
+        "misclassification_risk": "MEDIUM",
+    }
+
+_LLM_PROMPT = """You are validating *suspected illegal weapons trade* in academic research text.
+
+Return STRICT JSON exactly with this schema (no prose, no backticks):
+{
+  "final_label": "HIGH"|"MEDIUM"|"LOW",
+  "risk_adjustment": <number between -1.0 and 1.0>,
+  "reasons": ["short bullet 1", "short bullet 2"],
+  "evidence_spans": ["verbatim span 1", "verbatim span 2"],
+  "misclassification_risk": "LOW"|"MEDIUM"|"HIGH"
+}
+
+Constraints:
+- Do NOT invent evidence; spans must appear verbatim in the text.
+- Consider benign contexts (airsoft, cosplay, museums, video games, news quotes) as LOW unless there is clear transaction intent.
+- Strong indicators: weapon mention + transaction intent (buy/sell/price/contact), quantity, shipping/delivery, obfuscation.
+
+INPUT
+-----
+TEXT:
+\"\"\"{TEXT}\"\"\"
+
+RULE_FLAGS: {RULE_FLAGS}
+KEYWORDS: {KEYWORDS}
+PATTERNS: {PATTERNS}
+CURRENT_RULE_RISK: {RULE_RISK}
+"""
+
+def _ollama_classify(prompt: str) -> Dict[str, Any]:
+    if _requests is None:
+        raise RuntimeError("requests is not installed. Run: pip install requests")
+
+    resp = _requests.post(
+        f"{_OLLAMA_BASE}/api/chat",
+        json={
+            "model": _OLLAMA_MODEL,
+            "messages": [
+                {"role": "system", "content": "You are a precise risk classifier that returns strict JSON only."},
+                {"role": "user", "content": prompt},
+            ],
+            "options": {"temperature": 0},
+        },
+        timeout=120,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    txt = data.get("message", {}).get("content", "{}")
+    return _safe_json_parse(txt)
+
+def _llm_validate(text: str,
+                  rule_flags: List[str],
+                  keywords: List[str],
+                  patterns: List[str],
+                  rule_risk: float) -> Dict[str, Any]:
+    """Provider switch (Path A = Ollama only)."""
+    if _LLM_PROVIDER != "ollama":
+        return {}
+    prompt = _LLM_PROMPT.format(
+        TEXT=text[:8000],
+        RULE_FLAGS=_json.dumps(rule_flags, ensure_ascii=False),
+        KEYWORDS=_json.dumps(keywords, ensure_ascii=False),
+        PATTERNS=_json.dumps(patterns, ensure_ascii=False),
+        RULE_RISK=round(float(rule_risk), 3),
+    )
+    return _ollama_classify(prompt)
+
+def _combine_scores(rule_score: float, llm_adj: float, max_shift: float = 0.2) -> _Tuple[float, str]:
+    """Clamp LLM numeric influence to keep system stable."""
+    try:
+        adj = float(llm_adj)
+    except Exception:
+        adj = 0.0
+    adj = max(-1.0, min(1.0, adj))
+    combined = max(0.0, min(1.0, float(rule_score) + adj * max_shift))
+    if combined >= 0.7:
+        lvl = "HIGH"
+    elif combined >= 0.4:
+        lvl = "MEDIUM"
+    else:
+        lvl = "LOW"
+    return combined, lvl
+
+def _label_for(score: float) -> str:
+    return "HIGH" if score >= 0.7 else "MEDIUM" if score >= 0.4 else "LOW"
+
+# -----------------------------
+# Status endpoint for LLM
+# -----------------------------
+@app.get("/api/llm/status")
+async def llm_status():
+    ok = True
+    problems = []
+    if _LLM_PROVIDER != "ollama":
+        problems.append(f"LLM_PROVIDER={_LLM_PROVIDER} (expected 'ollama' for Path A).")
+        ok = False
+    if _requests is None:
+        problems.append("python-requests not installed.")
+        ok = False
+    # Try a quick ping only if requests is available
+    reachable = False
+    if _requests is not None and _LLM_PROVIDER == "ollama":
+        try:
+            r = _requests.get(f"{_OLLAMA_BASE}/api/tags", timeout=3)
+            reachable = r.status_code == 200
+        except Exception as e:
+            problems.append(f"Ollama not reachable at {_OLLAMA_BASE}: {e}")
+            ok = False
+
+    return {
+        "provider": _LLM_PROVIDER,
+        "ollama_base": _OLLAMA_BASE,
+        "model": _OLLAMA_MODEL,
+        "requests_installed": _requests is not None,
+        "ollama_reachable": reachable,
+        "ok": ok and reachable,
+        "problems": problems,
+    }
+
+# -----------------------------
+# NEW: Hybrid analyze endpoint (rules + optional LLM)
+# Does NOT modify your existing /api/detection/analyze
+# -----------------------------
+
+@app.post("/api/detection/analyze_llm")
+async def analyze_content_llm(
+    request: Dict[str, Any],
+    use_llm: bool = _Query(False, description="Enable LLM verification"),
+    always_if_toggled: bool = _Query(False, description="If true, always call LLM when toggled (skip triage band)"),
+):
+    """
+    Hybrid analysis:
+      1) Run your existing rule engine (same as /api/detection/analyze)
+      2) Optionally call LLM (Ollama) to verify/adjust
+      3) Return combined result with provenance fields
+    """
+    content = request.get("content", "")
+    if not content:
+        raise HTTPException(status_code=400, detail="No content provided")
+
+    # --- (1) Rules-first: reuse your analyzer as-is ---
+    analysis_results = analyzer.analyze_text(content)
+    rule_risk = float(analysis_results["risk_score"])
+    rule_level = _label_for(rule_risk)
+
+    base = {
+        "analysis_id": f"analysis_{int(datetime.now().timestamp())}",
+        "status": "completed",
+        "risk_score": rule_risk,
+        "risk_level": rule_level,
+        "confidence": analysis_results["confidence"],
+        "flags": analysis_results["flags"],
+        "detected_keywords": analysis_results["detected_keywords"],
+        "detected_patterns": analysis_results["detected_patterns"],
+        "summary": f"Rules-only: {len(analysis_results['flags'])} indicators.",
+        "timestamp": analysis_results["analysis_time"],
+        "source": "rules",
+    }
+
+    # --- (2) Optional LLM stage ---
+    if _llm_should_run(rule_risk, use_llm, always_if_toggled=always_if_toggled):
+        try:
+            llm = _llm_validate(
+                text=content,
+                rule_flags=base["flags"],
+                keywords=base["detected_keywords"],
+                patterns=base["detected_patterns"],
+                rule_risk=rule_risk,
+            ) or {}
+            combined_score, combined_level = _combine_scores(rule_risk, llm.get("risk_adjustment", 0.0), max_shift=0.2)
+            base.update({
+                "risk_score": combined_score,
+                "risk_level": llm.get("final_label", combined_level),
+                "llm_reasons": llm.get("reasons", []),
+                "llm_evidence_spans": llm.get("evidence_spans", []),
+                "llm_misclassification_risk": llm.get("misclassification_risk", "MEDIUM"),
+                "summary": f"Hybrid: rules + LLM ({llm.get('final_label', combined_level)})",
+                "source": "hybrid",
+            })
+        except Exception as e:
+            # LLM failure should never break analysis; fall back gracefully
+            base.update({
+                "llm_error": str(e),
+                "source": "rules"
+            })
+
+    return base
+
+
+
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host=AppConfig.HOST, port=AppConfig.PORT, reload=AppConfig.DEBUG)

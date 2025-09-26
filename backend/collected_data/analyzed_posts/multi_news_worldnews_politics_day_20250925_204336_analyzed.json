@@ -1,0 +1,62 @@
+{
+  "analysis_info": {
+    "analyzed_at": "2025-09-25T20:43:36.956367",
+    "total_posts": 2,
+    "high_risk_posts": 1,
+    "medium_risk_posts": 0,
+    "low_risk_posts": 1,
+    "academic_disclaimer": "ACADEMIC RESEARCH DATA COLLECTION\n        This data is collected for legitimate academic research purposes only.\n        All data handling follows academic ethics guidelines and privacy laws."
+  },
+  "high_risk_posts": [
+    {
+      "id": "1nq5cjp",
+      "title": "Starbucks announces significant store closures and layoffs",
+      "content": "",
+      "subreddit": "news",
+      "author_hash": "b97d6d3fe8757075",
+      "score": 14298,
+      "num_comments": 2437,
+      "created_utc": 1758803108.0,
+      "url": "https://reddit.com/r/news/comments/1nq5cjp/starbucks_announces_significant_store_closures/",
+      "collected_at": "2025-09-25T20:43:33.869423",
+      "risk_analysis": {
+        "risk_score": 1.0,
+        "confidence": 0.9,
+        "flags": [
+          "HIGH RISK: Detected firearms keyword 'sig'",
+          "HIGH RISK: Detected violence keyword 'off'",
+          "CRITICAL: Weapon + violence intent detected"
+        ],
+        "detected_keywords": [
+          "firearms: sig",
+          "violence: off"
+        ],
+        "detected_patterns": [],
+        "analysis_time": "2025-09-25T20:43:36.955815"
+      }
+    }
+  ],
+  "medium_risk_posts": [],
+  "low_risk_posts": [
+    {
+      "id": "1nq92s9",
+      "title": "House Democrat introduces articles of impeachment against RFK Jr.",
+      "content": "",
+      "subreddit": "politics",
+      "author_hash": "a6c8b3388600252f",
+      "score": 9008,
+      "num_comments": 303,
+      "created_utc": 1758812399.0,
+      "url": "https://reddit.com/r/politics/comments/1nq92s9/house_democrat_introduces_articles_of_impeachment/",
+      "collected_at": "2025-09-25T20:43:35.950728",
+      "risk_analysis": {
+        "risk_score": 0.0,
+        "confidence": 0.9,
+        "flags": [],
+        "detected_keywords": [],
+        "detected_patterns": [],
+        "analysis_time": "2025-09-25T20:43:36.955887"
+      }
+    }
+  ]
+}

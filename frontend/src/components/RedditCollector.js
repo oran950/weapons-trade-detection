@@ -5,20 +5,20 @@ const RedditCollector = () => {
   const [collectionResults, setCollectionResults] = useState(null);
   const [configStatus, setConfigStatus] = useState(null);
 
-  const [collectionParams, setCollectionParams] = useState({
-    subreddits: ['news', 'worldnews', 'politics'],
-    timeFilter: 'day',
-    sortMethod: 'hot',
-    limit_per_subreddit: 15,
-    keywords: '',
-    include_all_defaults: false
-  });
-
+  // Define subreddit arrays before using them in state
   const defaultSubreddits = [
     'news', 'worldnews', 'politics', 'PublicFreakout', 'Conservative', 
     'liberal', 'conspiracy', 'AskReddit', 'technology', 'science',
     'todayilearned', 'explainlikeimfive', 'changemyview', 'unpopularopinion',
-    'legaladvice', 'relationship_advice', 'amitheasshole', 'offmychest'
+    'legaladvice', 'relationship_advice', 'amitheasshole', 'offmychest',
+    'guns', 'firearms', 'CCW', 'ar15', 'ak47', 'gundeals', 'gunpolitics',
+    'progun', 'liberalgunowners', 'socialistRA', 'weekendgunnit',
+    'Military', 'army', 'navy', 'airforce', 'marines', 'veterans',
+    'EDC', 'tacticalgear', 'preppers', 'survival', 'bugout',
+    'combatfootage', 'MilitaryPorn', 'WarplanePorn', 'TankPorn',
+    'Bad_Cop_No_Donut', 'ProtectAndServe', 'police', 'security',
+    'Anarchism', 'socialism', 'communism', 'capitalism', 'libertarian',
+    'funny', 'pics', 'gaming', 'movies', 'books', 'music', 'sports'
   ];
 
   const availableSubreddits = [
@@ -26,8 +26,27 @@ const RedditCollector = () => {
     'liberal', 'conspiracy', 'technology', 'science', 'AskReddit',
     'todayilearned', 'explainlikeimfive', 'changemyview', 'unpopularopinion',
     'legaladvice', 'relationship_advice', 'amitheasshole', 'offmychest',
-    'funny', 'pics', 'gaming', 'movies', 'books', 'music', 'sports'
+    'guns', 'firearms', 'CCW', 'ar15', 'ak47', 'gundeals', 'gunpolitics',
+    'progun', 'liberalgunowners', 'socialistRA', 'weekendgunnit',
+    'Military', 'army', 'navy', 'airforce', 'marines', 'veterans',
+    'EDC', 'tacticalgear', 'preppers', 'survival', 'bugout',
+    'combatfootage', 'MilitaryPorn', 'WarplanePorn', 'TankPorn',
+    'Bad_Cop_No_Donut', 'ProtectAndServe', 'police', 'security',
+    'Anarchism', 'socialism', 'communism', 'capitalism', 'libertarian',
+    'funny', 'pics', 'gaming', 'movies', 'books', 'music', 'sports',
+    'ukraine', 'russia', 'syriancivilwar', 'geopolitics', 'internationalnews',
+    'dankmemes', 'memeeconomy', 'politicalhumor', 'darkhumor',
+    'IllegalLifeProTips', 'UnethicalLifeProTips', 'LifeProTips'
   ];
+
+  const [collectionParams, setCollectionParams] = useState({
+    subreddits: defaultSubreddits, // Start with all default subreddits selected
+    timeFilter: 'day',
+    sortMethod: 'hot',
+    limit_per_subreddit: 10, // Reduced from 15 due to more subreddits
+    keywords: '',
+    include_all_defaults: true // Start with this checked
+  });
 
   const handleSubredditToggle = (subreddit) => {
     const currentSubs = collectionParams.subreddits;
@@ -92,22 +111,6 @@ const RedditCollector = () => {
       <h2 style={{ color: '#1f2937', marginBottom: '20px' }}>
         Reddit Data Collection
       </h2>
-      
-      <div style={{ 
-        backgroundColor: '#fef3c7', 
-        border: '1px solid #f59e0b', 
-        borderRadius: '8px', 
-        padding: '20px', 
-        marginBottom: '30px' 
-      }}>
-        <h3 style={{ color: '#92400e', marginBottom: '10px' }}>Academic Research Only</h3>
-        <p style={{ color: '#92400e', marginBottom: '10px' }}>
-          This tool is designed for legitimate academic research with proper authorization.
-        </p>
-        <p style={{ color: '#92400e', fontSize: '14px' }}>
-          <strong>Requirements:</strong> Reddit API credentials, academic approval, compliance with Terms of Service
-        </p>
-      </div>
 
       {/* Configuration Status */}
       <div style={{
@@ -189,7 +192,7 @@ const RedditCollector = () => {
             <strong>Collect from all default subreddits ({defaultSubreddits.length} total)</strong>
           </label>
           <p style={{ fontSize: '12px', color: '#6b7280', marginLeft: '24px' }}>
-            Comprehensive collection from: news, worldnews, politics, PublicFreakout, Conservative, liberal, conspiracy, technology, science, AskReddit, and more...
+            Comprehensive collection from: news, politics, guns, firearms, military, survival, security, and many more weapon-related communities...
           </p>
         </div>
 
@@ -414,37 +417,6 @@ const RedditCollector = () => {
         </div>
       )}
 
-      <div style={{
-        backgroundColor: '#f3f4f6',
-        padding: '20px',
-        borderRadius: '8px',
-        marginTop: '30px'
-      }}>
-        <h4 style={{ color: '#374151', marginBottom: '15px' }}>Backend Configuration Setup:</h4>
-        <ol style={{ color: '#6b7280', fontSize: '14px', lineHeight: '1.6' }}>
-          <li>Create a <code>.env</code> file in your backend directory</li>
-          <li>Add your Reddit API credentials:
-            <pre style={{ 
-              backgroundColor: '#1f2937', 
-              color: '#f9fafb', 
-              padding: '10px', 
-              borderRadius: '4px', 
-              marginTop: '5px',
-              fontSize: '12px'
-            }}>
-{`REDDIT_CLIENT_ID=dxeHoWo9T02rNkonwS7Ddw
-REDDIT_CLIENT_SECRET=LNK6RbRmgf1szuzurp9Ek7c5hq45ow
-REDDIT_USER_AGENT=academic_research:weapons_detection:v2.0 (by /u/Rich_Professor6715)`}
-            </pre>
-          </li>
-          <li>Install required packages: <code>pip install praw python-dotenv</code></li>
-          <li>Restart your backend server</li>
-          <li>Click "Refresh Status" above to verify configuration</li>
-        </ol>
-        <p style={{ color: '#6b7280', fontSize: '12px', marginTop: '15px' }}>
-          <strong>Note:</strong> Never commit your .env file to version control. Add it to .gitignore.
-        </p>
-      </div>
     </div>
   );
 };

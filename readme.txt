@@ -8,12 +8,15 @@ if you're already in the backend directory:
 Install dependencies (if not already done):
     pip install -r requirements.txt
 
-cd backend
-    source venv/bin/activate
-    python src/server.py
+
+
+1.  docker compose up -d ollama
+2.  cd backend
+        source venv/bin/activate
+        python src/server.py
 
 
 
-cd frontend
-    npm install  # if not done already
-    npm start    # or npm run dev
+3.  cd frontend
+        npm install  # if not done already
+        npm start    # or npm run dev
