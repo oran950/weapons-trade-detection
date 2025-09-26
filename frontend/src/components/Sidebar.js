@@ -21,7 +21,6 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       id: 'reddit',
       name: 'Reddit Collection',
       icon: '🔴',
-      badge: 'NEW'
     },
     {
       id: 'datasets',
