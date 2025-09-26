@@ -1,0 +1,3 @@
+# In your project root directory
+echo ".env" >> .gitignore
+echo "collected_data/" >> .gitignore
