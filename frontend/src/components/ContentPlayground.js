@@ -122,15 +122,6 @@ const ContentPlayground = () => {
         Content Generation Playground
       </h2>
       
-      <div style={{ 
-        backgroundColor: '#fff3cd', 
-        border: '1px solid #ffeaa7', 
-        borderRadius: '8px', 
-        padding: '15px', 
-        marginBottom: '30px' 
-      }}>
-        <strong>Academic Research Only:</strong> This tool generates synthetic content for testing detection algorithms in controlled academic environments.
-      </div>
 
       {/* Generation Controls */}
       <div style={{ 
