@@ -17,7 +17,7 @@ class ContentParameters:
 class SyntheticContentGenerator:
     def __init__(self):
         # Academic research disclaimer
-        self.research_disclaimer = "[SYNTHETIC DATA FOR ACADEMIC RESEARCH ONLY]"
+        self.research_disclaimer = ""
         
         # Vocabulary organized by intensity levels
         self.vocabulary = {

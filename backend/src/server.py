@@ -1,29 +1,34 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-import uvicorn
-from datetime import datetime
-from typing import Dict, List, Any, Optional
-from pydantic import BaseModel, Field
-
-from detection.text_analyzer import WeaponsTextAnalyzer
 import sys
 import os
 
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
+# Get the directory containing this file (src/)
+src_dir = os.path.dirname(os.path.abspath(__file__))
+# Get the backend root directory
+backend_dir = os.path.dirname(src_dir)
 
-# Import configuration
-from config import AppConfig
+# Add both src and backend root to path
+sys.path.insert(0, src_dir)  # For relative imports within src/
+sys.path.insert(0, backend_dir)  # For imports from backend root (config, generation)
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from generation.content_generator import SyntheticContentGenerator, ContentParameters
+# Standard library imports
+from datetime import datetime  # noqa: E402
+from typing import Dict, List, Any, Tuple as _Tuple  # noqa: E402
+import json as _json  # noqa: E402
+import re as _re  # noqa: E402
+import asyncio  # noqa: E402
+from concurrent.futures import ThreadPoolExecutor  # noqa: E402
 
-import json as _json
-import re as _re
-from typing import Tuple as _Tuple
-import requests as _requests
-from fastapi import Query as _Query
+# Third-party imports
+from fastapi import FastAPI, HTTPException, Query as _Query  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
+import requests as _requests  # noqa: E402
+import uvicorn  # noqa: E402
+
+# Local imports (after path setup)
+from detection.text_analyzer import WeaponsTextAnalyzer  # noqa: E402
+from config import AppConfig  # noqa: E402
+from generation.content_generator import SyntheticContentGenerator, ContentParameters  # noqa: E402
 
 # --- ENV / Config (uses your existing AppConfig where convenient) ---
 _LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
@@ -623,7 +628,13 @@ KEYWORDS: {KEYWORDS}
 PATTERNS: {PATTERNS}
 CURRENT_RULE_RISK: {RULE_RISK}
 """
+''''
+1. Text comes in → Rule engine analyzes → Risk score: 0.6 (MEDIUM)
+2. If LLM enabled → Ollama reviews the text + rule results
+3. Ollama returns: "LOW risk - this is about airsoft, not real weapons"
+4. System combines: Rule score (0.6) + LLM adjustment (-0.3) = Final: 0.3 (LOW)
 
+'''
 def _ollama_classify(prompt: str) -> Dict[str, Any]:
     if _requests is None:
         raise RuntimeError("requests is not installed. Run: pip install requests")
@@ -787,4 +798,14 @@ async def analyze_content_llm(
 
 
 if __name__ == "__main__":
-    uvicorn.run("server:app", host=AppConfig.HOST, port=AppConfig.PORT, reload=AppConfig.DEBUG)
+    import uvicorn
+    # Run the server
+    # Recommended: Run from backend directory with: uvicorn src.server:app --reload --host 0.0.0.0 --port 9000
+    # Or run directly: python src/server.py
+    uvicorn.run(
+        app,
+        host=AppConfig.HOST,
+        port=AppConfig.PORT,
+        reload=False,
+        log_level="info"
+    )
