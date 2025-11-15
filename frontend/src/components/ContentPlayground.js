@@ -11,6 +11,11 @@ const ContentPlayground = () => {
   const [quantity, setQuantity] = useState(5);
   const [includeContact, setIncludeContact] = useState(false);
   const [includePricing, setIncludePricing] = useState(false);
+  
+  // Big data generation state
+  const [bigDataQuantity, setBigDataQuantity] = useState(2000);
+  const [selectedPlatforms, setSelectedPlatforms] = useState(['reddit', 'twitter', 'facebook', 'instagram']);
+  const [selectedLengths, setSelectedLengths] = useState(['short', 'medium', 'long']);
 
   const generateContent = async () => {
     setIsGenerating(true);
@@ -36,7 +41,7 @@ const ContentPlayground = () => {
       }
     } catch (error) {
       console.error('Generation failed:', error);
-      alert('Content generation failed');
+      window.alert('Content generation failed');
     } finally {
       setIsGenerating(false);
     }
@@ -70,10 +75,59 @@ const ContentPlayground = () => {
       }
     } catch (error) {
       console.error('Batch generation failed:', error);
-      alert('Batch generation failed');
+      window.alert('Batch generation failed');
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const generateBigData = async () => {
+    if (!window.confirm(`This will generate ${bigDataQuantity} posts. This may take a while. Continue?`)) {
+      return;
+    }
+    
+    setIsGenerating(true);
+    try {
+      const response = await fetch('http://localhost:9000/api/generation/big-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          total_quantity: parseInt(bigDataQuantity),
+          platforms: selectedPlatforms,
+          content_lengths: selectedLengths
+        })
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        setGeneratedContent(data.content);
+        setAnalysisResults([]);
+        window.alert(`Successfully generated ${data.statistics.total_generated} posts!`);
+      }
+    } catch (error) {
+      console.error('Big data generation failed:', error);
+      window.alert('Big data generation failed: ' + error.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const togglePlatform = (platform) => {
+    setSelectedPlatforms(prev => 
+      prev.includes(platform) 
+        ? prev.filter(p => p !== platform)
+        : [...prev, platform]
+    );
+  };
+
+  const toggleLength = (length) => {
+    setSelectedLengths(prev => 
+      prev.includes(length) 
+        ? prev.filter(l => l !== length)
+        : [...prev, length]
+    );
   };
 
   const analyzeContent = async (content) => {
@@ -114,6 +168,38 @@ const ContentPlayground = () => {
       case 'LOW': return '#16a34a'; // green
       default: return '#6b7280'; // gray
     }
+  };
+
+  const downloadJSON = () => {
+    if (generatedContent.length === 0) {
+      window.alert('No content to download');
+      return;
+    }
+
+    const dataToDownload = {
+      generated_at: new Date().toISOString(),
+      total_items: generatedContent.length,
+      content: generatedContent,
+      analysis_results: analysisResults,
+      summary: {
+        total_generated: generatedContent.length,
+        analyzed: analysisResults.length,
+        high_risk: analysisResults.filter(r => r.analysis.risk_level === 'HIGH').length,
+        medium_risk: analysisResults.filter(r => r.analysis.risk_level === 'MEDIUM').length,
+        low_risk: analysisResults.filter(r => r.analysis.risk_level === 'LOW').length
+      }
+    };
+
+    const jsonString = JSON.stringify(dataToDownload, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `generated_content_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -233,10 +319,142 @@ const ContentPlayground = () => {
         </button>
       </div>
 
+      {/* Big Data Generation Section */}
+      <div style={{
+        marginTop: '40px',
+        padding: '25px',
+        backgroundColor: '#f0f9ff',
+        borderRadius: '8px',
+        border: '2px solid #3b82f6'
+      }}>
+        <h3 style={{ color: '#1e40af', marginBottom: '20px' }}>
+          🚀 Big Data Generation (2000+ Posts)
+        </h3>
+        
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+          gap: '20px',
+          marginBottom: '20px'
+        }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+              Total Quantity:
+            </label>
+            <input 
+              type="number" 
+              min="100" 
+              max="10000" 
+              value={bigDataQuantity}
+              onChange={(e) => setBigDataQuantity(e.target.value)}
+              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>
+            Platforms:
+          </label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {['reddit', 'twitter', 'facebook', 'instagram'].map(platform => (
+              <label key={platform} style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '5px',
+                padding: '8px 12px',
+                backgroundColor: selectedPlatforms.includes(platform) ? '#3b82f6' : '#e5e7eb',
+                color: selectedPlatforms.includes(platform) ? 'white' : '#374151',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}>
+                <input 
+                  type="checkbox" 
+                  checked={selectedPlatforms.includes(platform)}
+                  onChange={() => togglePlatform(platform)}
+                  style={{ cursor: 'pointer' }}
+                />
+                {platform.charAt(0).toUpperCase() + platform.slice(1)}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>
+            Content Lengths:
+          </label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {['short', 'medium', 'long'].map(length => (
+              <label key={length} style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '5px',
+                padding: '8px 12px',
+                backgroundColor: selectedLengths.includes(length) ? '#059669' : '#e5e7eb',
+                color: selectedLengths.includes(length) ? 'white' : '#374151',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}>
+                <input 
+                  type="checkbox" 
+                  checked={selectedLengths.includes(length)}
+                  onChange={() => toggleLength(length)}
+                  style={{ cursor: 'pointer' }}
+                />
+                {length.charAt(0).toUpperCase() + length.slice(1)}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <button 
+          onClick={generateBigData}
+          disabled={isGenerating || selectedPlatforms.length === 0 || selectedLengths.length === 0}
+          style={{
+            padding: '14px 28px',
+            backgroundColor: isGenerating || selectedPlatforms.length === 0 || selectedLengths.length === 0 
+              ? '#6b7280' : '#dc2626',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: isGenerating || selectedPlatforms.length === 0 || selectedLengths.length === 0 
+              ? 'not-allowed' : 'pointer',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            width: '100%'
+          }}
+        >
+          {isGenerating ? `Generating ${bigDataQuantity} posts...` : `Generate ${bigDataQuantity} Posts for Big Data Analysis`}
+        </button>
+      </div>
+
       {/* Generated Content Display */}
       {generatedContent.length > 0 && (
         <div>
-          <h3 style={{ marginBottom: '20px' }}>Generated Content ({generatedContent.length} items)</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ margin: 0 }}>Generated Content ({generatedContent.length} items)</h3>
+            <button
+              onClick={downloadJSON}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#8b5cf6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>⬇</span> Download JSON
+            </button>
+          </div>
           
           <div style={{ display: 'grid', gap: '20px' }}>
             {generatedContent.map((content, index) => {

@@ -13,6 +13,8 @@ class ContentParameters:
     include_contact: bool = False
     include_pricing: bool = False
     quantity: int = 1
+    platform: str = None  # 'reddit', 'twitter', 'facebook', etc.
+    content_length: str = 'medium'  # 'short', 'medium', 'long'
 
 class SyntheticContentGenerator:
     def __init__(self):
@@ -59,6 +61,34 @@ class SyntheticContentGenerator:
                 'format': 'discussion',
                 'length': 'long',
                 'tone': 'community'
+            }
+        }
+        
+        # Platform-specific styles
+        self.platform_specific_styles = {
+            'reddit': {
+                'prefixes': ['WTS', 'WTB', 'ISO', 'PSA', 'TIL', 'FYI'],
+                'hashtags': False,
+                'mentions': False,
+                'max_length': 1000
+            },
+            'twitter': {
+                'prefixes': [],
+                'hashtags': True,
+                'mentions': True,
+                'max_length': 280
+            },
+            'facebook': {
+                'prefixes': [],
+                'hashtags': True,
+                'mentions': True,
+                'max_length': 5000
+            },
+            'instagram': {
+                'prefixes': [],
+                'hashtags': True,
+                'mentions': True,
+                'max_length': 2200
             }
         }
         
@@ -114,10 +144,12 @@ class SyntheticContentGenerator:
         template = random.choice(self.pricing_patterns)
         return template.format(amount=amount)
     
-    def generate_metadata(self) -> Dict[str, Any]:
+    def generate_metadata(self, platform: str = None) -> Dict[str, Any]:
         """Generate synthetic metadata for content"""
         locations = ['NY', 'CA', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI']
         platforms = ['Facebook', 'Craigslist', 'Reddit', 'Telegram', 'Discord', 'Twitter', 'Instagram']
+        
+        selected_platform = platform if platform else random.choice(platforms)
         
         timestamp = datetime.now() - timedelta(
             days=random.randint(0, 30),
@@ -127,7 +159,7 @@ class SyntheticContentGenerator:
         
         return {
             'timestamp': timestamp.isoformat(),
-            'platform': random.choice(platforms),
+            'platform': selected_platform,
             'location': random.choice(locations),
             'user_id': f"user_{random.randint(10000, 99999)}",
             'post_id': f"post_{random.randint(100000, 999999)}"
@@ -137,17 +169,39 @@ class SyntheticContentGenerator:
         """Generate social media post style content"""
         vocab = self.vocabulary[params.intensity_level]
         
-        templates = [
-            "Anyone know where I can find {item}? {descriptor} preferred. {action}",
-            "{action} {descriptor} {item}. Serious buyers only.",
-            "Looking for {descriptor} {item}. {action} quickly.",
-            "Have {descriptor} {item} available. {action}.",
-            "{item} for sale. {descriptor} condition. {action}.",
-            "Need {descriptor} {item}. {action} ASAP.",
-            "Selling {descriptor} {item}. {action}. PM me.",
-            "WTS: {descriptor} {item}. {action}.",
-            "ISO {descriptor} {item}. {action}."
+        # Different templates based on content length
+        if params.content_length == 'short':
+            templates = [
+                "{action} {descriptor} {item}",
+                "WTS: {descriptor} {item}",
+                "ISO {descriptor} {item}",
+                "Need {descriptor} {item} ASAP",
+                "{item} for sale. {descriptor}",
+            ]
+        elif params.content_length == 'long':
+            templates = [
+            "Anyone know where I can find {item}? I'm specifically looking for {descriptor} quality items. {action} and would appreciate any leads or recommendations from the community.",
+            "{action} {descriptor} {item}. Serious buyers only. This is a quality piece that I've had for a while and need to move. Feel free to reach out with questions.",
+            "Looking for {descriptor} {item}. I've been {action} quickly and haven't had much luck with the usual sources. If anyone has recommendations or knows someone, please let me know.",
+            "Have {descriptor} {item} available. {action}. This is a rare find and I'm willing to work with serious buyers. The condition is excellent and I can provide more details upon request.",
+            "{item} for sale. {descriptor} condition. {action}. I've had this for a while and it's time to find it a new home. Comes with all original accessories and documentation.",
+            "Need {descriptor} {item}. {action} ASAP for a project I'm working on. I'm willing to pay fair market value and can move quickly on the right piece.",
+            "Selling {descriptor} {item}. {action}. PM me for details, photos, and pricing. I'm open to reasonable offers and can provide references if needed.",
+            "WTS: {descriptor} {item}. {action}. This is a quality piece that I've maintained well. Looking for someone who will appreciate it. Serious inquiries only please.",
+            "ISO {descriptor} {item}. {action}. I've been searching for a while and haven't found exactly what I'm looking for. If you have one or know someone who does, please reach out."
         ]
+        else:  # medium
+            templates = [
+                "Anyone know where I can find {item}? {descriptor} preferred. {action}",
+                "{action} {descriptor} {item}. Serious buyers only.",
+                "Looking for {descriptor} {item}. {action} quickly.",
+                "Have {descriptor} {item} available. {action}.",
+                "{item} for sale. {descriptor} condition. {action}.",
+                "Need {descriptor} {item}. {action} ASAP.",
+                "Selling {descriptor} {item}. {action}. PM me.",
+                "WTS: {descriptor} {item}. {action}.",
+                "ISO {descriptor} {item}. {action}."
+            ]
         
         template = random.choice(templates)
         content = template.format(
@@ -155,6 +209,10 @@ class SyntheticContentGenerator:
             descriptor=random.choice(vocab['descriptors']),
             action=random.choice(vocab['actions'])
         )
+        
+        # Apply platform-specific formatting
+        if params.platform:
+            content = self.apply_platform_formatting(content, params.platform)
         
         return content
     
@@ -181,6 +239,10 @@ class SyntheticContentGenerator:
             action=random.choice(vocab['actions'])
         )
         
+        # Apply platform-specific formatting
+        if params.platform:
+            content = self.apply_platform_formatting(content, params.platform)
+        
         return content
     
     def generate_ad_content(self, params: ContentParameters) -> str:
@@ -206,6 +268,10 @@ class SyntheticContentGenerator:
             action=random.choice(vocab['actions'])
         )
         
+        # Apply platform-specific formatting
+        if params.platform:
+            content = self.apply_platform_formatting(content, params.platform)
+        
         return content
     
     def generate_forum_content(self, params: ContentParameters) -> str:
@@ -230,6 +296,38 @@ class SyntheticContentGenerator:
             descriptor=random.choice(vocab['descriptors']),
             action=random.choice(vocab['actions'])
         )
+        
+        # Apply platform-specific formatting
+        if params.platform:
+            content = self.apply_platform_formatting(content, params.platform)
+        
+        return content
+    
+    def apply_platform_formatting(self, content: str, platform: str) -> str:
+        """Apply platform-specific formatting"""
+        if platform.lower() not in self.platform_specific_styles:
+            return content
+        
+        style = self.platform_specific_styles[platform.lower()]
+        
+        # Add hashtags for platforms that support them
+        if style['hashtags'] and random.random() > 0.5:
+            hashtags = ['#trading', '#collectibles', '#gear', '#equipment', '#vintage']
+            content += ' ' + ' '.join(random.sample(hashtags, random.randint(1, 3)))
+        
+        # Add mentions for platforms that support them
+        if style['mentions'] and random.random() > 0.7:
+            mentions = ['@user123', '@collector', '@trader']
+            content = random.choice(mentions) + ' ' + content
+        
+        # Add platform-specific prefixes
+        if style['prefixes'] and random.random() > 0.6:
+            prefix = random.choice(style['prefixes'])
+            content = f"{prefix}: {content}"
+        
+        # Truncate if exceeds platform max length
+        if len(content) > style['max_length']:
+            content = content[:style['max_length']-3] + '...'
         
         return content
     
@@ -286,7 +384,7 @@ class SyntheticContentGenerator:
                 content += f" {pricing}"
             
             # Generate metadata
-            metadata = self.generate_metadata()
+            metadata = self.generate_metadata(params.platform)
             
             # Compile final content object
             content_object = {
@@ -295,7 +393,9 @@ class SyntheticContentGenerator:
                 'parameters': {
                     'type': params.content_type,
                     'intensity': params.intensity_level,
-                    'language': params.language
+                    'language': params.language,
+                    'platform': params.platform or metadata['platform'],
+                    'content_length': params.content_length
                 },
                 'metadata': metadata,
                 'contact_info': contact_info,
@@ -339,3 +439,100 @@ class SyntheticContentGenerator:
         }
         
         return results
+    
+    def generate_big_data_batch(self, total_quantity: int = 2000, platforms: List[str] = None, 
+                                  content_lengths: List[str] = None) -> Dict[str, Any]:
+        """Generate a large batch of content for big data analysis"""
+        if platforms is None:
+            platforms = ['reddit', 'twitter', 'facebook', 'instagram']
+        if content_lengths is None:
+            content_lengths = ['short', 'medium', 'long']
+        
+        all_content = []
+        content_types = ['post', 'message', 'ad', 'forum']
+        intensity_levels = ['low', 'medium', 'high']
+        
+        # Calculate distribution
+        items_per_combination = max(1, total_quantity // (len(platforms) * len(content_lengths) * len(content_types) * len(intensity_levels)))
+        
+        print(f"Generating {total_quantity} posts across {len(platforms)} platforms, {len(content_lengths)} lengths...")
+        
+        generated_count = 0
+        for platform in platforms:
+            for content_length in content_lengths:
+                for content_type in content_types:
+                    for intensity in intensity_levels:
+                        if generated_count >= total_quantity:
+                            break
+                        
+                        # Calculate how many to generate for this combination
+                        remaining = total_quantity - generated_count
+                        quantity = min(items_per_combination, remaining)
+                        
+                        if quantity > 0:
+                            params = ContentParameters(
+                                content_type=content_type,
+                                intensity_level=intensity,
+                                quantity=quantity,
+                                platform=platform,
+                                content_length=content_length,
+                                include_contact=random.random() > 0.7,  # 30% include contact
+                                include_pricing=random.random() > 0.6   # 40% include pricing
+                            )
+                            
+                            content = self.generate_content(params)
+                            all_content.extend(content)
+                            generated_count += len(content)
+                            
+                            if generated_count % 100 == 0:
+                                print(f"Generated {generated_count}/{total_quantity} posts...")
+        
+        # Generate final batch with remaining items if needed
+        if generated_count < total_quantity:
+            remaining = total_quantity - generated_count
+            params = ContentParameters(
+                content_type=random.choice(content_types),
+                intensity_level=random.choice(intensity_levels),
+                quantity=remaining,
+                platform=random.choice(platforms),
+                content_length=random.choice(content_lengths),
+                include_contact=random.random() > 0.7,
+                include_pricing=random.random() > 0.6
+            )
+            content = self.generate_content(params)
+            all_content.extend(content)
+            generated_count += len(content)
+        
+        # Shuffle for randomness
+        random.shuffle(all_content)
+        
+        # Generate statistics
+        platform_distribution = {}
+        length_distribution = {}
+        intensity_distribution = {}
+        
+        for item in all_content:
+            platform = item['parameters'].get('platform', 'unknown')
+            platform_distribution[platform] = platform_distribution.get(platform, 0) + 1
+            
+            length = item['parameters'].get('content_length', 'unknown')
+            length_distribution[length] = length_distribution.get(length, 0) + 1
+            
+            intensity = item['parameters'].get('intensity', 'unknown')
+            intensity_distribution[intensity] = intensity_distribution.get(intensity, 0) + 1
+        
+        return {
+            'content': all_content,
+            'statistics': {
+                'total_generated': len(all_content),
+                'platform_distribution': platform_distribution,
+                'length_distribution': length_distribution,
+                'intensity_distribution': intensity_distribution,
+                'generation_time': datetime.now().isoformat(),
+                'configuration': {
+                    'total_quantity': total_quantity,
+                    'platforms': platforms,
+                    'content_lengths': content_lengths
+                }
+            }
+        }

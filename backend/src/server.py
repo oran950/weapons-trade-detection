@@ -73,6 +73,11 @@ class BatchGenerationRequest(BaseModel):
     include_contact: bool = Field(default=False, description="Include contact information")
     include_pricing: bool = Field(default=False, description="Include pricing information")
 
+class BigDataGenerationRequest(BaseModel):
+    total_quantity: int = Field(default=2000, ge=100, le=10000, description="Total number of posts to generate")
+    platforms: List[str] = Field(default=["reddit", "twitter", "facebook", "instagram"], description="Platforms to generate for")
+    content_lengths: List[str] = Field(default=["short", "medium", "long"], description="Content lengths to include")
+
 # Reddit collection models (updated for multiple subreddits)
 class RedditCollectionParams(BaseModel):
     subreddits: List[str] = Field(default=["news"], description="List of subreddits to collect from")
@@ -122,6 +127,7 @@ async def api_info():
             "/api/detection/analyze", 
             "/api/generation/content",
             "/api/generation/batch",
+            "/api/generation/big-data",
             "/api/reddit/collect",
             "/api/reddit/config-status"
         ]
@@ -217,6 +223,37 @@ async def generate_batch_content(request: BatchGenerationRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch generation failed: {str(e)}")
+
+@app.post("/api/generation/big-data")
+async def generate_big_data(request: BigDataGenerationRequest):
+    """Generate a large batch of content for big data analysis (2000+ posts)"""
+    try:
+        # Run in thread pool to avoid blocking
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            big_data_results = await loop.run_in_executor(
+                executor,
+                content_generator.generate_big_data_batch,
+                request.total_quantity,
+                request.platforms,
+                request.content_lengths
+            )
+        
+        return {
+            "status": "success",
+            "message": f"Generated {big_data_results['statistics']['total_generated']} posts for big data analysis",
+            "content": big_data_results['content'],
+            "statistics": big_data_results['statistics'],
+            "configuration": {
+                "total_quantity": request.total_quantity,
+                "platforms": request.platforms,
+                "content_lengths": request.content_lengths
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Big data generation failed: {str(e)}")
 
 @app.get("/api/generation/templates")
 async def get_generation_templates():
