@@ -1,27 +1,23 @@
 """
-Legacy text analyzer module.
-This module is kept for backwards compatibility.
-New code should use: from backend_service.core.analyzer import TextAnalyzer
+Text Analyzer - Rule-based weapons detection
+Refactored from the original text_analyzer.py
 """
 import re
 from datetime import datetime
 from typing import List, Dict, Any
 import string
 
-# Re-export the new analyzer for backwards compatibility
-try:
-    import sys
-    import os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    from backend_service.core.analyzer import TextAnalyzer as NewTextAnalyzer
-    _USE_NEW_ANALYZER = True
-except ImportError:
-    _USE_NEW_ANALYZER = False
+from ..entities.analysis import AnalysisResult
 
-class WeaponsTextAnalyzer:
+
+class TextAnalyzer:
+    """
+    Rule-based text analyzer for weapons trade detection.
+    Uses keyword matching and pattern detection for fast analysis.
+    """
+    
     def __init__(self):
-        # No heavy AI models - just fast rule-based detection
-        print("Initializing lightweight weapons analyzer (no AI models)")
+        print("Initializing TextAnalyzer (rule-based detection)")
         
         # Comprehensive weapons keywords - any of these should trigger HIGH risk
         self.high_risk_keywords = {
@@ -30,16 +26,12 @@ class WeaponsTextAnalyzer:
                 'glock', 'ak47', 'ak-47', 'ar15', 'ar-15', 'beretta', 'smith', 'wesson', 'colt',
                 'sig', 'sauer', 'ruger', 'remington', 'winchester', 'mossberg', 'revolver',
                 'carbine', 'submachine', 'assault rifle', 'sniper', 'scope', 'silencer', 'suppressor',
-                # Military weapons
                 'm16', 'm4', 'm249', 'm240', 'm14', 'm1911', 'uzi', 'mp5', 'mp7', 'scar', 'fal',
                 'hk416', 'g36', 'aug', 'tavor', 'galil', 'aks74', 'rpk', 'pkm', 'mg42', 'm60',
-                # Common slang and abbreviations
                 'piece', 'heat', 'strap', 'burner', 'nine', 'forty', 'deagle', 'desert eagle',
                 'mac10', 'mac11', 'tec9', 'draco', 'choppa', 'stick', 'iron', 'tool', 'biscuit',
-                # Ammunition types
                 'ammo', 'rounds', 'shells', 'cartridge', 'hollow point', 'fmj', '9mm', '.45',
                 '.40', '.380', '.22', '.223', '.308', '.50cal', '7.62', '5.56', '.38', '.357',
-                # Weapon parts and accessories
                 'barrel', 'trigger', 'stock', 'grip', 'magazine', 'clip', 'chamber', 'laser sight',
                 'red dot', 'holster', 'extended mag', 'drum mag', 'bipod', 'muzzle brake'
             ],
@@ -68,7 +60,7 @@ class WeaponsTextAnalyzer:
             ]
         }
         
-        # Highly suspicious patterns - these should automatically trigger HIGH risk
+        # Highly suspicious patterns
         self.high_risk_patterns = [
             r'\b(?:buy|sell|trade|purchase|get|want|need|looking for|acquire|seeking)\s+(?:guns?|weapons?|firearms?|pistols?|rifles?|glock|ak47|ar15|m16|m4|uzi|mp5)\b',
             r'\b(?:want|need)\s+to\s+(?:buy|get|purchase|acquire)\s+(?:gun|weapon|firearm|pistol|rifle|glock|m16|ak47|ar15)\b',
@@ -88,89 +80,119 @@ class WeaponsTextAnalyzer:
     
     def clean_text(self, text: str) -> str:
         """Clean and normalize text for analysis"""
-        # Remove extra whitespace and convert to lowercase
         text = re.sub(r'\s+', ' ', text.lower().strip())
-        # Remove punctuation but keep spaces
         text = text.translate(str.maketrans('', '', string.punctuation.replace(' ', '')))
         return text
     
-    def analyze_text(self, text: str) -> Dict[str, Any]:
-        """Analyze text with aggressive weapons detection"""
+    def analyze_text(self, text: str) -> AnalysisResult:
+        """
+        Analyze text with aggressive weapons detection
         
-        original_text = text
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            AnalysisResult with risk score and detected indicators
+        """
         cleaned_text = self.clean_text(text)
         
-        # Initialize results
-        results = {
-            'risk_score': 0.0,
-            'confidence': 0.9,  # High confidence in our detection
-            'flags': [],
-            'detected_keywords': [],
-            'detected_patterns': [],
-            'analysis_time': datetime.now().isoformat()
-        }
+        risk_score = 0.0
+        flags = []
+        detected_keywords = []
+        detected_patterns = []
         
-        # Check for high-risk keywords (each adds significant risk)
+        # Check for high-risk keywords
         for category, keywords in self.high_risk_keywords.items():
             found_keywords = []
             for keyword in keywords:
                 if keyword in cleaned_text:
                     found_keywords.append(keyword)
-                    results['risk_score'] += 0.4  # Each keyword adds 40% risk
-                    results['flags'].append(f"HIGH RISK: Detected {category} keyword '{keyword}'")
+                    risk_score += 0.4
+                    flags.append(f"HIGH RISK: Detected {category} keyword '{keyword}'")
             
             if found_keywords:
-                results['detected_keywords'].append(f"{category}: {', '.join(found_keywords)}")
+                detected_keywords.append(f"{category}: {', '.join(found_keywords)}")
         
-        # Check for high-risk patterns (each adds major risk)
+        # Check for high-risk patterns
         for pattern in self.high_risk_patterns:
             matches = re.findall(pattern, cleaned_text, re.IGNORECASE)
             if matches:
                 for match in matches:
-                    results['detected_patterns'].append(match)
-                    results['risk_score'] += 0.5  # Each pattern adds 50% risk
-                    results['flags'].append(f"HIGH RISK: Suspicious intent pattern detected: '{match}'")
+                    detected_patterns.append(match)
+                    risk_score += 0.5
+                    flags.append(f"HIGH RISK: Suspicious intent pattern detected: '{match}'")
         
         # Check for medium-risk patterns
         for pattern in self.medium_risk_patterns:
             matches = re.findall(pattern, cleaned_text, re.IGNORECASE)
             if matches:
                 for match in matches:
-                    results['detected_patterns'].append(match)
-                    results['risk_score'] += 0.3  # Medium risk patterns
-                    results['flags'].append(f"MEDIUM RISK: Pattern detected: '{match}'")
+                    detected_patterns.append(match)
+                    risk_score += 0.3
+                    flags.append(f"MEDIUM RISK: Pattern detected: '{match}'")
         
         # Special combinations that boost risk
-        has_weapon_keyword = any(category in ['firearms', 'explosives'] 
-                               for category in self.high_risk_keywords.keys() 
-                               if any(kw in cleaned_text for kw in self.high_risk_keywords[category]))
+        has_weapon_keyword = any(
+            category in ['firearms', 'explosives'] 
+            for category in self.high_risk_keywords.keys() 
+            if any(kw in cleaned_text for kw in self.high_risk_keywords[category])
+        )
         
-        has_buy_sell_intent = any(word in cleaned_text for word in ['buy', 'sell', 'trade', 'purchase', 'want', 'need', 'get'])
-        has_violence_keyword = any(kw in cleaned_text for kw in self.high_risk_keywords['violence'])
+        has_buy_sell_intent = any(
+            word in cleaned_text 
+            for word in ['buy', 'sell', 'trade', 'purchase', 'want', 'need', 'get']
+        )
+        has_violence_keyword = any(
+            kw in cleaned_text 
+            for kw in self.high_risk_keywords['violence']
+        )
         
         # Boost score for dangerous combinations
         if has_weapon_keyword and has_buy_sell_intent:
-            results['risk_score'] += 0.3
-            results['flags'].append("CRITICAL: Weapon + transaction intent detected")
+            risk_score += 0.3
+            flags.append("CRITICAL: Weapon + transaction intent detected")
         
         if has_weapon_keyword and has_violence_keyword:
-            results['risk_score'] += 0.4
-            results['flags'].append("CRITICAL: Weapon + violence intent detected")
+            risk_score += 0.4
+            flags.append("CRITICAL: Weapon + violence intent detected")
         
         # Cap risk score at 1.0 and ensure minimum thresholds
-        results['risk_score'] = min(results['risk_score'], 1.0)
+        risk_score = min(risk_score, 1.0)
         
         # Force HIGH risk for any weapon-related content
-        if has_weapon_keyword or results['detected_keywords'] or results['detected_patterns']:
-            results['risk_score'] = max(results['risk_score'], 0.7)  # Minimum 70% for any weapons content
+        if has_weapon_keyword or detected_keywords or detected_patterns:
+            risk_score = max(risk_score, 0.7)
         
         # Override: Any mention of specific weapons should be HIGH risk
-        weapon_mentions = ['gun', 'pistol', 'rifle', 'glock', 'firearm', 'weapon', 'ak47', 'ar15', 
-                          'm16', 'm4', 'uzi', 'mp5', 'beretta', 'colt', 'smith', 'wesson', 'sig',
-                          'remington', 'winchester', 'mossberg', 'ruger', 'scar', 'fal', 'aug', 'tavor']
+        weapon_mentions = [
+            'gun', 'pistol', 'rifle', 'glock', 'firearm', 'weapon', 'ak47', 'ar15',
+            'm16', 'm4', 'uzi', 'mp5', 'beretta', 'colt', 'smith', 'wesson', 'sig',
+            'remington', 'winchester', 'mossberg', 'ruger', 'scar', 'fal', 'aug', 'tavor'
+        ]
         if any(weapon in cleaned_text for weapon in weapon_mentions):
-            results['risk_score'] = max(results['risk_score'], 0.8)  # Minimum 80% for direct weapon mentions
-            if not any("HIGH RISK" in flag for flag in results['flags']):
-                results['flags'].append("HIGH RISK: Direct weapon reference detected")
+            risk_score = max(risk_score, 0.8)
+            if not any("HIGH RISK" in flag for flag in flags):
+                flags.append("HIGH RISK: Direct weapon reference detected")
         
-        return results
+        return AnalysisResult(
+            risk_score=risk_score,
+            confidence=0.9,
+            flags=flags,
+            detected_keywords=detected_keywords,
+            detected_patterns=detected_patterns,
+            analysis_time=datetime.now().isoformat(),
+            source="rules"
+        )
+    
+    def analyze_batch(self, texts: List[str]) -> List[AnalysisResult]:
+        """
+        Analyze multiple texts
+        
+        Args:
+            texts: List of texts to analyze
+            
+        Returns:
+            List of AnalysisResults
+        """
+        return [self.analyze_text(text) for text in texts]
+

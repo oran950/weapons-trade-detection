@@ -11,7 +11,7 @@ const ContentPlayground = () => {
   const [quantity, setQuantity] = useState(5);
   const [includeContact, setIncludeContact] = useState(false);
   const [includePricing, setIncludePricing] = useState(false);
-  
+
   // Big data generation state
   const [bigDataQuantity, setBigDataQuantity] = useState(2000);
   const [selectedPlatforms, setSelectedPlatforms] = useState(['reddit', 'twitter', 'facebook', 'instagram']);

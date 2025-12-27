@@ -23,6 +23,11 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       icon: '🔴',
     },
     {
+      id: 'telegram',
+      name: 'Telegram Collection',
+      icon: '✈️',
+    },
+    {
       id: 'datasets',
       name: 'Datasets',
       icon: '📁'
@@ -138,7 +143,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
           <strong>Status:</strong> Connected
         </div>
         <div style={{ marginBottom: '8px' }}>
-          <strong>Version:</strong> 2.1.0
+          <strong>Version:</strong> 2.2.0
         </div>
         <div>
           <strong>Python:</strong> 3.13

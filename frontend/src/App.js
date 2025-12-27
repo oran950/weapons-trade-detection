@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import { Datasets, Reports, Settings } from './components/PlaceholderComponents';
 import RedditCollector from './components/RedditCollector';
+import TelegramCollector from './components/TelegramCollector';
 
 function App() {
   const [backendStatus, setBackendStatus] = useState('Connecting...');
@@ -92,6 +93,8 @@ function App() {
         return <ContentPlayground />;
       case 'reddit':
         return <RedditCollector />;
+      case 'telegram':
+        return <TelegramCollector />;
       case 'datasets':
         return <Datasets />;
       case 'reports':
