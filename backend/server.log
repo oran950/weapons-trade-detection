@@ -982,3 +982,12 @@ See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.htm
 2026-01-01 07:49:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
 2026-01-01 07:49:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
 2026-01-01 07:49:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:50:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:50:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:50:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:50:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:50:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:50:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:51:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:51:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:51:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
