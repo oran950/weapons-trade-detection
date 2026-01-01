@@ -31,6 +31,20 @@ class RedditConfig:
             missing.append('REDDIT_USER_AGENT')
         return missing
 
+class OllamaConfig:
+    """Ollama LLM configuration"""
+    
+    BASE: str = os.getenv('OLLAMA_BASE', 'http://localhost:11434')
+    MODEL: str = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
+    VISION_MODEL: str = os.getenv('OLLAMA_VISION_MODEL', 'llava:7b')
+    TIMEOUT: int = int(os.getenv('OLLAMA_TIMEOUT', '180'))
+    
+    @classmethod
+    def is_configured(cls) -> bool:
+        """Check if Ollama is configured"""
+        return bool(cls.BASE)
+
+
 class AppConfig:
     """General application configuration"""
     
@@ -44,3 +58,6 @@ class AppConfig:
     
     # Reddit configuration
     reddit = RedditConfig
+    
+    # Ollama LLM configuration
+    ollama = OllamaConfig

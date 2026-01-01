@@ -1,0 +1,981 @@
+2025-12-31 18:29:02 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:29:02 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:29:02 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:29:13 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:13 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:13 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:13 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:13 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:14 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:14 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:14 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:14 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:14 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:14 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:14 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:15 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:15 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:16 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:17 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:17 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:18 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:18 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:18 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:19 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:19 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:19 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:19 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:19 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:20 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:20 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:20 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:21 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:22 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:22 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:23 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:23 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:24 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:24 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:24 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:25 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:26 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:26 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:26 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:27 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:28 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:29 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:29 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:29 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:30 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:30 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:30 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:31 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:31 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:32 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:33 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:33 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:34 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:34 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:35 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:35 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:35 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:35 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:37 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:37 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:37 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:37 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:38 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:38 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:39 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:39 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:40 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:40 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:40 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:41 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:42 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:42 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:42 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:44 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:44 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:45 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:46 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:46 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:47 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:48 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:48 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:49 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:50 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:50 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:50 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:51 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:51 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:51 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:51 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:52 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:52 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:53 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:29:54 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:29:54 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:29:54 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:29:54 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:29:54 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:29:59 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:30:02 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:30:02 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:30:02 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:30:04 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:30:08 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:30:08 | INFO | httpx | HTTP Request: GET https://external-preview.redd.it/kggkAqELPX24pB3rd3OB61Di89l3pIufPnYX4jvfNAk.jpeg?auto=webp&s=7ca2a2a53b95589e71dff4ed0615f7b2dcf493e5 "HTTP/1.1 200 OK"
+2025-12-31 18:30:15 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:30:18 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:30:23 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:30:27 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:30:27 | INFO | httpx | HTTP Request: GET https://i.redd.it/dp6qufgikuhf1.jpeg "HTTP/1.1 200 OK"
+2025-12-31 18:30:32 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:30:32 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:30:32 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:30:35 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:30:38 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:31:02 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:31:02 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:31:02 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:31:32 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:31:32 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:31:32 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:32:02 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:32:02 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:32:02 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:32:32 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:32:32 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:32:32 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:33:02 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:33:02 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:33:02 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:33:32 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:33:32 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:33:32 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:34:02 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:34:02 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:34:02 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:34:32 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:34:32 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:34:32 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:34:54 | INFO | WeaponsDetectionAPI | 📡 SSE Stream started: subreddits=gundeals,GunAccessoriesForSale,ComblocMarket,GunAccessoryVendors,gunsales,Gunsforsale,airsoftmarket,BrassSwap,ReloadingExchange,GunHolsterClassifieds,Knife_Swap,KnifeDeals,BalisongSale,EDCexchange,opaborat,GunOptics,SuppressedNFA,NFA,Form1,Firearms,guns,ar15,ak47,Glocks,SigSauer,SmithAndWesson,CZFirearms,Beretta,HecklerKoch,FNHerstal,Ruger,Remington,Mossberg,Shotguns,Revolvers,1911,longrange,PlebeianAR,ar15build,GunPorn,Handguns,CCW,EDC,tacticalgear,QualityTacticalGear,MilitaryCollecting,milsurp,SKS,Mauser,MosinNagant,ammo,reloading,InStockAmmo,liberalgunowners,SocialistRA,progun,Firearms_Advice,GunMemes,ForgottenWeapons, limit=1, images=True, llm=True
+2025-12-31 18:34:54 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:54 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/gundeals
+2025-12-31 18:34:54 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:54 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/GunAccessoriesForSale
+2025-12-31 18:34:54 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:54 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/ComblocMarket
+2025-12-31 18:34:54 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:54 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/GunAccessoryVendors
+2025-12-31 18:34:54 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:55 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:55 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/gunsales
+2025-12-31 18:34:55 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:55 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/Gunsforsale
+2025-12-31 18:34:55 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:55 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/airsoftmarket
+2025-12-31 18:34:55 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:55 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/BrassSwap
+2025-12-31 18:34:55 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:55 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/ReloadingExchange
+2025-12-31 18:34:55 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:57 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/GunHolsterClassifieds
+2025-12-31 18:34:57 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:57 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/Knife_Swap
+2025-12-31 18:34:57 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:58 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/KnifeDeals
+2025-12-31 18:34:58 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:59 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:34:59 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/BalisongSale
+2025-12-31 18:34:59 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:00 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/EDCexchange
+2025-12-31 18:35:00 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:00 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/opaborat
+2025-12-31 18:35:00 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:00 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:00 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/GunOptics
+2025-12-31 18:35:00 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:00 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/SuppressedNFA
+2025-12-31 18:35:00 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:01 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/NFA
+2025-12-31 18:35:01 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:02 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/Form1
+2025-12-31 18:35:02 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:03 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/Firearms
+2025-12-31 18:35:03 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:04 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/guns
+2025-12-31 18:35:04 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:04 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/ar15
+2025-12-31 18:35:04 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:05 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/ak47
+2025-12-31 18:35:05 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:05 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:06 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/Glocks
+2025-12-31 18:35:06 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:07 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/SigSauer
+2025-12-31 18:35:07 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:07 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:07 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/SmithAndWesson
+2025-12-31 18:35:07 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:08 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/CZFirearms
+2025-12-31 18:35:08 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:09 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/Beretta
+2025-12-31 18:35:09 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:10 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:10 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/HecklerKoch
+2025-12-31 18:35:10 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:11 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/FNHerstal
+2025-12-31 18:35:11 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:11 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:11 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/Ruger
+2025-12-31 18:35:11 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:12 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/Remington
+2025-12-31 18:35:12 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:12 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/Mossberg
+2025-12-31 18:35:12 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:13 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/Shotguns
+2025-12-31 18:35:13 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:14 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:14 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/Revolvers
+2025-12-31 18:35:14 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:15 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:16 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/1911
+2025-12-31 18:35:16 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:16 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/longrange
+2025-12-31 18:35:16 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:17 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/PlebeianAR
+2025-12-31 18:35:17 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:17 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:18 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/ar15build
+2025-12-31 18:35:18 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:18 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/GunPorn
+2025-12-31 18:35:18 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:19 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/Handguns
+2025-12-31 18:35:19 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:19 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/CCW
+2025-12-31 18:35:19 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:20 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:20 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/EDC
+2025-12-31 18:35:20 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:21 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/tacticalgear
+2025-12-31 18:35:21 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:22 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/QualityTacticalGear
+2025-12-31 18:35:22 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:22 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/MilitaryCollecting
+2025-12-31 18:35:22 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:23 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/milsurp
+2025-12-31 18:35:23 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:24 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/SKS
+2025-12-31 18:35:24 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:26 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:26 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/Mauser
+2025-12-31 18:35:26 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:27 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/MosinNagant
+2025-12-31 18:35:27 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:28 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/ammo
+2025-12-31 18:35:28 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:29 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/reloading
+2025-12-31 18:35:29 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:30 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:30 | INFO | WeaponsDetectionAPI | 📥 Collected 1 posts from r/InStockAmmo
+2025-12-31 18:35:30 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:31 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/liberalgunowners
+2025-12-31 18:35:31 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:31 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/SocialistRA
+2025-12-31 18:35:31 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:31 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/progun
+2025-12-31 18:35:31 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:31 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/Firearms_Advice
+2025-12-31 18:35:31 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:32 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/GunMemes
+2025-12-31 18:35:32 | WARNING | praw | It appears that you are using PRAW in an asynchronous environment.
+It is strongly recommended to use Async PRAW: https://asyncpraw.readthedocs.io.
+See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.html#discord-bots-and-asynchronous-environments for more info.
+
+2025-12-31 18:35:33 | INFO | WeaponsDetectionAPI | 📥 Collected 0 posts from r/ForgottenWeapons
+2025-12-31 18:35:33 | INFO | WeaponsDetectionAPI | 📊 Total posts collected: 13
+2025-12-31 18:35:33 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:35:33 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:35:33 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:35:33 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:35:33 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:35:33 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:35:33 | INFO | WeaponsDetectionAPI | 📝 Analyzing post 1/13: '📌 Welcome to r/gunsales – Read Before Posting...' from r/gunsales
+2025-12-31 18:35:33 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:35:33 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:35:37 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:35:37 | INFO | WeaponsDetectionAPI | 📝 Analyzing post 2/13: 'WTS/WTT Vantac Speeder...' from r/BalisongSale
+2025-12-31 18:35:42 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:35:42 | INFO | WeaponsDetectionAPI | 📝 Analyzing post 3/13: 'Top Mount Red Dot...' from r/Gunoptics
+2025-12-31 18:35:42 | INFO | httpx | HTTP Request: GET https://i.redd.it/dp6qufgikuhf1.jpeg "HTTP/1.1 200 OK"
+2025-12-31 18:35:50 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:35:53 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:35:54 | INFO | WeaponsDetectionAPI | 📝 Analyzing post 4/13: 'Gen 6 is neat...' from r/Glocks
+2025-12-31 18:35:54 | INFO | httpx | HTTP Request: GET https://i.redd.it/20ht576k5lag1.jpeg "HTTP/1.1 200 OK"
+2025-12-31 18:36:02 | INFO | httpx | HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-12-31 18:36:02 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:36:02 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:36:02 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:45:31 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:45:31 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:45:31 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:46:01 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:46:01 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:46:01 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:46:31 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:46:31 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:46:31 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:47:01 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:47:01 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:47:01 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 18:47:31 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 18:47:31 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 18:47:31 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 20:08:59 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 20:08:59 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 20:08:59 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 21:29:26 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 21:29:26 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 21:29:26 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 22:21:18 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 22:21:18 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 22:21:18 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 22:30:52 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 22:30:52 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 22:30:52 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 22:32:50 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 22:32:50 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 22:32:50 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 22:39:28 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 22:39:28 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 22:39:28 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2025-12-31 23:40:25 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2025-12-31 23:40:25 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2025-12-31 23:40:25 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 00:58:29 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 00:58:29 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 00:58:29 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 01:58:34 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 01:58:34 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 01:58:34 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 02:38:22 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 02:38:22 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 02:38:22 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 03:03:51 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 03:03:51 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 03:03:51 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 03:05:53 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 03:05:53 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 03:05:53 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 03:07:24 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 03:07:24 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 03:07:24 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 04:31:13 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 04:31:13 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 04:31:13 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 05:46:21 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 05:46:21 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 05:46:21 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 06:33:33 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 06:33:33 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 06:33:33 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:08:34 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:08:34 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:08:34 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:10:36 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:10:36 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:10:36 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:12:37 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:12:37 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:12:37 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:30:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:30:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:30:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:30:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:30:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:30:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:31:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:31:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:31:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:31:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:31:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:31:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:32:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:32:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:32:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:32:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:32:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:32:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:33:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:33:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:33:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:33:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:33:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:33:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:34:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:34:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:34:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:34:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:34:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:34:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:35:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:35:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:35:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:35:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:35:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:35:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:36:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:36:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:36:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:36:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:36:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:36:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:37:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:37:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:37:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:37:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:37:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:37:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:38:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:38:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:38:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:38:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:38:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:38:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:39:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:39:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:39:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:39:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:39:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:39:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:40:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:40:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:40:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:40:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:40:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:40:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:41:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:41:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:41:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:41:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:41:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:41:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:42:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:42:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:42:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:42:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:42:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:42:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:43:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:43:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:43:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:43:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:43:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:43:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:44:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:44:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:44:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:44:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:44:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:44:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:45:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:45:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:45:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:45:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:45:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:45:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:46:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:46:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:46:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:46:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:46:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:46:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:47:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:47:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:47:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:47:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:47:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:47:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:48:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:48:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:48:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:48:41 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:48:41 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:48:41 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']
+2026-01-01 07:49:11 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-01-01 07:49:11 | INFO | httpx | HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+2026-01-01 07:49:11 | DEBUG | WeaponsDetectionAPI | ✅ Ollama available: vision=True, llm=True, models=['llama3.1:8b', 'llava:7b']

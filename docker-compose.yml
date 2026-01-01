@@ -1,19 +1,95 @@
 version: "3.9"
 
 services:
+  # =============================================================================
+  # BACKEND - FastAPI Server (Port 9000)
+  # =============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: weapons-backend
+    ports:
+      - "9000:9000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=llama3.1:8b
+      - OLLAMA_VISION_MODEL=llava:7b
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - ./backend/server.log:/app/server.log
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =============================================================================
+  # FRONTEND - React App (Port 3000)
+  # =============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: weapons-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:9000
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # =============================================================================
+  # OLLAMA - LLM Service (Port 11434)
+  # =============================================================================
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
     ports:
-      - "11434:11434"                 # expose Ollama on localhost
+      - "11434:11434"
     volumes:
-      - ollama_models:/root/.ollama   # cache models persistently
+      - ollama_models:/root/.ollama
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
       interval: 10s
       timeout: 3s
       retries: 10
     restart: unless-stopped
+
+  # =============================================================================
+  # OLLAMA SETUP - Pull required models (runs once)
+  # =============================================================================
+  ollama-setup:
+    image: ollama/ollama:latest
+    container_name: ollama-setup
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama_models:/root/.ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "🔄 Pulling LLM models..."
+        ollama pull llama3.1:8b
+        ollama pull llava:7b
+        echo "✅ Models ready!"
+    restart: "no"
 
 volumes:
   ollama_models:

@@ -34,6 +34,9 @@ class Config:
     TELEGRAM_API_HASH: Optional[str] = os.getenv('TELEGRAM_API_HASH')
     TELEGRAM_SESSION_NAME: str = os.getenv('TELEGRAM_SESSION_NAME', 'weapons_detection_session')
     
+    # Telegram Bot API (alternative to user API)
+    TELEGRAM_BOT_TOKEN: Optional[str] = os.getenv('TELEGRAM_BOT_TOKEN')
+    
     # LLM Configuration
     LLM_PROVIDER: str = os.getenv('LLM_PROVIDER', 'ollama').lower()
     OLLAMA_BASE: str = os.getenv('OLLAMA_BASE', 'http://localhost:11434')
@@ -60,7 +63,11 @@ class Config:
     
     @property
     def telegram_configured(self) -> bool:
-        """Check if Telegram API is properly configured"""
+        """Check if Telegram API is properly configured (either user API or bot API)"""
+        # Bot API (simpler, just needs token)
+        if self.TELEGRAM_BOT_TOKEN:
+            return True
+        # User API (needs both api_id and api_hash)
         return all([
             self.TELEGRAM_API_ID,
             self.TELEGRAM_API_HASH

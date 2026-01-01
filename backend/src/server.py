@@ -1,5 +1,33 @@
 import sys
 import os
+import logging
+
+# Log file path
+LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'server.log')
+
+# Configure logging - output to both stdout AND file
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(name)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler(LOG_FILE, mode='a')
+    ],
+    force=True
+)
+# Set uvicorn loggers to show our logs
+logging.getLogger("uvicorn").setLevel(logging.INFO)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)  # Less noise from access logs
+
+logger = logging.getLogger("WeaponsDetectionAPI")
+logger.setLevel(logging.DEBUG)
+
+# Also print directly for immediate visibility
+def log_print(msg):
+    """Print and flush immediately for live logs"""
+    print(msg, flush=True)
+    logger.info(msg)
 
 # Get the directory containing this file (src/)
 src_dir = os.path.dirname(os.path.abspath(__file__))
@@ -21,9 +49,18 @@ from concurrent.futures import ThreadPoolExecutor  # noqa: E402
 # Third-party imports
 from fastapi import FastAPI, HTTPException, Query as _Query  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import StreamingResponse  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 import requests as _requests  # noqa: E402
 import uvicorn  # noqa: E402
+
+# SSE streaming support
+try:
+    from sse_starlette.sse import EventSourceResponse
+    SSE_AVAILABLE = True
+except ImportError:
+    SSE_AVAILABLE = False
+    EventSourceResponse = None
 
 # Local imports (after path setup)
 from detection.text_analyzer import WeaponsTextAnalyzer  # noqa: E402
@@ -107,13 +144,41 @@ async def root():
 # Health check endpoint
 @app.get("/health")
 async def health_check():
+    logger.debug("🏥 Health check requested")
+    telegram_configured = bool(os.getenv('TELEGRAM_BOT_TOKEN'))
+    
+    # Check Ollama availability
+    ollama_available = False
+    ollama_models = []
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(f"{AppConfig.ollama.BASE}/api/tags")
+            if response.status_code == 200:
+                models_data = response.json()
+                ollama_models = [m['name'] for m in models_data.get('models', [])]
+                # Check if required models are available
+                has_vision = any('llava' in m for m in ollama_models)
+                has_llm = any('llama' in m for m in ollama_models)
+                ollama_available = has_vision or has_llm
+                logger.debug(f"✅ Ollama available: vision={has_vision}, llm={has_llm}, models={ollama_models}")
+            else:
+                logger.warning(f"⚠️ Ollama returned status {response.status_code}")
+    except httpx.ConnectError as e:
+        logger.warning(f"⚠️ Cannot connect to Ollama at {AppConfig.ollama.BASE}: {e}")
+    except Exception as e:
+        logger.warning(f"⚠️ Ollama check failed: {type(e).__name__}: {e}")
+    
     return {
         "status": "OK",
         "service": "Weapons Detection API",
-        "version": "2.1.0",
+        "version": "2.2.0",
         "timestamp": datetime.now().isoformat(),
         "python_version": "3.13",
-        "reddit_configured": AppConfig.reddit.is_configured()
+        "reddit_configured": AppConfig.reddit.is_configured(),
+        "telegram_configured": telegram_configured,
+        "ollama_available": ollama_available,
+        "ollama_models": ollama_models
     }
 
 @app.get("/api")
@@ -153,9 +218,9 @@ async def analyze_content(request: Dict[str, Any]):
     analysis_results = analyzer.analyze_text(content)
     
     risk_score = analysis_results['risk_score']
-    if risk_score >= 0.7:
+    if risk_score >= 0.75:
         risk_level = "HIGH"
-    elif risk_score >= 0.4:
+    elif risk_score >= 0.45:
         risk_level = "MEDIUM"
     else:
         risk_level = "LOW"
@@ -322,7 +387,8 @@ async def collect_reddit_data(request: RedditCollectionRequest):
             "collection_timestamp": datetime.now().isoformat(),
             "configured_with_credentials": True,
             "collection_summary": collected_posts.get("collection_summary", {}),
-            "subreddits_collected": collected_posts.get("subreddits_collected", [])
+            "subreddits_collected": collected_posts.get("subreddits_collected", []),
+            "all_posts": collected_posts.get("all_posts", [])
         }
         
     except Exception as e:
@@ -454,6 +520,844 @@ def collect_and_analyze_posts(collector, params):
         
     except Exception as e:
         raise Exception(f"Multi-subreddit collection and analysis failed: {str(e)}")
+
+
+# ============================================================================
+# SSE STREAMING ENDPOINTS
+# ============================================================================
+
+def stream_collect_posts_sync(collector, subreddits: List[str], limit_per_sub: int, time_filter: str, sort_method: str):
+    """
+    Generator that yields posts one by one as they're collected and analyzed.
+    Designed to be wrapped in an async generator for SSE.
+    """
+    for subreddit in subreddits:
+        try:
+            # Collect posts from this subreddit
+            collected_posts = collector.collect_subreddit_posts(
+                subreddit_name=subreddit,
+                time_filter=time_filter,
+                limit=limit_per_sub,
+                sort_method=sort_method
+            )
+            
+            # Yield each post after analysis
+            for post in collected_posts:
+                try:
+                    # Handle both dataclass RedditPost objects and dictionaries
+                    if hasattr(post, 'title'):
+                        # It's a RedditPost dataclass
+                        title = post.title
+                        content = post.content if hasattr(post, 'content') else ''
+                        post_id = post.id
+                        score = post.score if hasattr(post, 'score') else 0
+                        num_comments = post.num_comments if hasattr(post, 'num_comments') else 0
+                        url = post.url if hasattr(post, 'url') else f"https://reddit.com/r/{subreddit}"
+                        created_utc = post.created_utc if hasattr(post, 'created_utc') else 0
+                        author_hash = post.author_hash if hasattr(post, 'author_hash') else ''
+                        # Image fields
+                        image_url = getattr(post, 'image_url', None)
+                        thumbnail = getattr(post, 'thumbnail', None)
+                        media_type = getattr(post, 'media_type', 'text')
+                        gallery_images = getattr(post, 'gallery_images', None)
+                        is_video = getattr(post, 'is_video', False)
+                        video_url = getattr(post, 'video_url', None)
+                    else:
+                        # It's a dictionary
+                        title = post.get('title', '')
+                        content = post.get('selftext', post.get('body', post.get('content', '')))
+                        post_id = post.get('id', '')
+                        score = post.get('score', 0)
+                        num_comments = post.get('num_comments', 0)
+                        url = post.get('url', f"https://reddit.com/r/{subreddit}")
+                        created_utc = post.get('created_utc', 0)
+                        author_hash = str(hash(post.get('author', '')))[:8]
+                        # Image fields from dict
+                        image_url = post.get('image_url')
+                        thumbnail = post.get('thumbnail')
+                        media_type = post.get('media_type', 'text')
+                        gallery_images = post.get('gallery_images')
+                        is_video = post.get('is_video', False)
+                        video_url = post.get('video_url')
+                    
+                    # Analyze the post
+                    combined_text = f"{title} {content}"
+                    analysis = analyzer.analyze_text(combined_text)
+                    
+                    # Determine risk level
+                    risk_score = analysis.get('risk_score', 0)
+                    if risk_score >= 0.75:
+                        risk_level = 'HIGH'
+                    elif risk_score >= 0.45:
+                        risk_level = 'MEDIUM'
+                    else:
+                        risk_level = 'LOW'
+                    
+                    # Create post object with analysis
+                    post_data = {
+                        'id': post_id,
+                        'title': title,
+                        'content': content[:500] if content else '',
+                        'subreddit': subreddit,
+                        'author_hash': author_hash,
+                        'score': score,
+                        'num_comments': num_comments,
+                        'url': url,
+                        'created_utc': created_utc,
+                        'collected_at': datetime.now().isoformat(),
+                        'platform': 'reddit',
+                        # Image/media fields
+                        'image_url': image_url,
+                        'thumbnail': thumbnail,
+                        'media_type': media_type,
+                        'gallery_images': gallery_images,
+                        'is_video': is_video,
+                        'video_url': video_url,
+                        'risk_analysis': {
+                            'risk_score': risk_score,
+                            'risk_level': risk_level,
+                            'confidence': analysis.get('confidence', 0),
+                            'flags': analysis.get('flags', []),
+                            'detected_keywords': analysis.get('detected_keywords', []),
+                            'detected_patterns': analysis.get('detected_patterns', [])
+                        }
+                    }
+                    
+                    yield post_data
+                    
+                except Exception as e:
+                    print(f"Error analyzing post: {str(e)}")
+                    continue
+                    
+        except Exception as e:
+            print(f"Error collecting from r/{subreddit}: {str(e)}")
+            # Yield an error event for this subreddit
+            yield {
+                'error': True,
+                'subreddit': subreddit,
+                'message': str(e)
+            }
+            continue
+
+
+@app.get("/api/stream/reddit")
+async def stream_reddit_collection(
+    subreddits: str = _Query(..., description="Comma-separated list of subreddits"),
+    limit: int = _Query(default=10, ge=1, le=50, description="Posts per subreddit"),
+    time_filter: str = _Query(default="day", description="Time filter"),
+    sort_method: str = _Query(default="hot", description="Sort method"),
+    analyze_images: bool = _Query(default=True, description="Auto-analyze images for weapons using LLaVA"),
+    llm_analysis: bool = _Query(default=True, description="Use LLM to analyze if post is illegal weapon trade")
+):
+    """
+    Stream Reddit posts as they are collected and analyzed using Server-Sent Events.
+    Each post is sent as a separate event, allowing real-time UI updates.
+    When analyze_images=true, images are automatically analyzed for weapons using LLaVA.
+    When llm_analysis=true, LLM reviews each post to determine if it's illegal weapon trade.
+    """
+    log_print(f"📡 SSE Stream started: subreddits={subreddits}, limit={limit}, images={analyze_images}, llm={llm_analysis}")
+    if not SSE_AVAILABLE:
+        raise HTTPException(
+            status_code=500,
+            detail="SSE streaming not available. Install sse-starlette package."
+        )
+    
+    if not AppConfig.reddit.is_configured():
+        raise HTTPException(
+            status_code=400,
+            detail=f"Reddit API not configured. Missing: {', '.join(AppConfig.reddit.get_missing_config())}"
+        )
+    
+    # Parse subreddits
+    subreddit_list = [s.strip() for s in subreddits.split(',') if s.strip()]
+    if not subreddit_list:
+        raise HTTPException(status_code=400, detail="No subreddits specified")
+    
+    # Use RedditHandler which has enhanced image extraction via from_praw_submission
+    from backend_service.handlers.reddit_handler import RedditHandler
+    
+    handler = RedditHandler(
+        client_id=AppConfig.reddit.CLIENT_ID,
+        client_secret=AppConfig.reddit.CLIENT_SECRET,
+        user_agent=AppConfig.reddit.USER_AGENT
+    )
+    
+    # Collect posts from each subreddit using the enhanced handler
+    all_posts = []
+    for subreddit in subreddit_list:
+        try:
+            posts = handler.collect_subreddit_posts(
+                subreddit_name=subreddit,
+                time_filter=time_filter,
+                limit=limit,
+                sort_method=sort_method
+            )
+            all_posts.extend(posts)
+            log_print(f"📥 Collected {len(posts)} posts from r/{subreddit}")
+        except Exception as e:
+            log_print(f"❌ Error collecting from r/{subreddit}: {str(e)}")
+    
+    log_print(f"📊 Total posts collected: {len(all_posts)}")
+    
+    # Initialize image analyzer if enabled
+    image_analyzer = None
+    vision_available = False
+    if analyze_images:
+        try:
+            from backend_service.handlers.image_analysis_handler import ImageAnalysisHandler
+            image_analyzer = ImageAnalysisHandler()
+            # Check if vision model is available (non-blocking check)
+        except ImportError:
+            log_print("⚠️ Image analysis handler not available")
+    
+    # Initialize LLM text analyzer if enabled
+    llm_analyzer = None
+    llm_available = False
+    if llm_analysis:
+        try:
+            from backend_service.handlers.llm_text_analyzer import LLMTextAnalyzer
+            llm_analyzer = LLMTextAnalyzer()
+        except ImportError:
+            log_print("⚠️ LLM text analyzer not available")
+    
+    async def event_generator():
+        """Generate SSE events for each collected post"""
+        nonlocal vision_available, llm_available
+        from dataclasses import asdict
+        
+        stats = {
+            'total_scanned': 0,  # Total posts scanned before filtering
+            'total': 0,          # Posts shown (after filtering NONE risk)
+            'high_risk': 0,
+            'medium_risk': 0,
+            'low_risk': 0,
+            'none_risk': 0,      # Filtered out (below 25% risk)
+            'weapons_detected': 0,
+            'images_analyzed': 0,
+            'illegal_trade_detected': 0,
+            'llm_analyzed': 0,
+        }
+        
+        # Check vision model availability at start
+        if image_analyzer:
+            vision_available = await image_analyzer.check_model_available()
+        
+        # Check LLM model availability at start
+        if llm_analyzer:
+            llm_available = await llm_analyzer.check_model_available()
+        
+        # Send start event with collection phase
+        yield {
+            "event": "start",
+            "data": _json.dumps({
+                "phase": "collecting",
+                "subreddits": subreddit_list,
+                "limit": limit,
+                "total_posts": len(all_posts),
+                "analyze_images": analyze_images and vision_available,
+                "vision_model": image_analyzer.vision_model if image_analyzer else None,
+                "llm_analysis": llm_analysis and llm_available,
+                "llm_model": llm_analyzer.model if llm_analyzer else None,
+                "timestamp": datetime.now().isoformat()
+            })
+        }
+        
+        # Send phase change: COLLECTING complete, starting ANALYZING
+        yield {
+            "event": "phase",
+            "data": _json.dumps({
+                "phase": "analyzing",
+                "message": f"📊 Collected {len(all_posts)} posts. Now analyzing with AI...",
+                "total_to_analyze": len(all_posts),
+                "vision_enabled": vision_available,
+                "llm_enabled": llm_available
+            })
+        }
+        
+        # Send info about vision status
+        if analyze_images:
+            if vision_available:
+                yield {
+                    "event": "info",
+                    "data": _json.dumps({
+                        "message": f"🔍 Vision analysis enabled using {image_analyzer.vision_model}",
+                        "type": "vision_enabled"
+                    })
+                }
+            else:
+                yield {
+                    "event": "info", 
+                    "data": _json.dumps({
+                        "message": "⚠️ Vision model not available. Run: ollama pull llava:7b",
+                        "type": "vision_unavailable"
+                    })
+                }
+        
+        # Send info about LLM status
+        if llm_analysis:
+            if llm_available:
+                yield {
+                    "event": "info",
+                    "data": _json.dumps({
+                        "message": f"🧠 LLM analysis enabled using {llm_analyzer.model} - checking for illegal weapon trade",
+                        "type": "llm_enabled"
+                    })
+                }
+            else:
+                yield {
+                    "event": "info", 
+                    "data": _json.dumps({
+                        "message": "⚠️ LLM model not available. Run: ollama pull llama3.1:8b",
+                        "type": "llm_unavailable"
+                    })
+                }
+        
+        try:
+            post_index = 0
+            for post in all_posts:
+                post_index += 1
+                # Track total posts scanned (before any filtering)
+                stats['total_scanned'] += 1
+                
+                log_print(f"📝 Analyzing post {post_index}/{len(all_posts)}: '{post.title[:50]}...' from r/{post.subreddit}")
+                
+                # Analyze the post content (text analysis)
+                combined_text = f"{post.title} {post.content}"
+                analysis = analyzer.analyze_text(combined_text)
+                
+                # Determine risk level from text
+                # Thresholds: HIGH >= 75%, MEDIUM >= 45%, LOW >= 25%, NONE < 25%
+                risk_score = analysis.get('risk_score', 0)
+                if risk_score >= 0.75:
+                    risk_level = 'HIGH'
+                    stats['high_risk'] += 1
+                elif risk_score >= 0.45:
+                    risk_level = 'MEDIUM'
+                    stats['medium_risk'] += 1
+                elif risk_score >= 0.25:
+                    risk_level = 'LOW'
+                    stats['low_risk'] += 1
+                else:
+                    risk_level = 'NONE'
+                    stats['none_risk'] += 1
+                
+                stats['total'] += 1
+                
+                # Image weapon detection
+                image_analysis = None
+                annotated_image = None
+                
+                # Analyze any post that has an image URL (not just media_type == 'image')
+                # This covers galleries, link posts with preview images, etc.
+                image_to_analyze = post.image_url or post.thumbnail
+                if vision_available and image_analyzer and image_to_analyze and not post.is_video:
+                    try:
+                        stats['images_analyzed'] += 1
+                        image_result = await image_analyzer.analyze_image(image_to_analyze)
+                        
+                        if image_result.contains_weapons:
+                            stats['weapons_detected'] += 1
+                            # Upgrade risk level if weapons detected in image
+                            if image_result.overall_risk == 'HIGH' and risk_level != 'HIGH':
+                                risk_level = 'HIGH'
+                                risk_score = max(risk_score, image_result.risk_score)
+                            
+                            image_analysis = {
+                                'contains_weapons': True,
+                                'weapon_count': image_result.weapon_count,
+                                'detections': [d.to_dict() for d in image_result.detections],
+                                'overall_risk': image_result.overall_risk,
+                                'analysis_notes': image_result.analysis_notes,
+                                'processing_time_ms': image_result.processing_time_ms
+                            }
+                            annotated_image = image_result.annotated_image_base64
+                        else:
+                            # NO WEAPONS DETECTED - Decrease risk score
+                            # If image was analyzed and is clean, reduce risk by 20%
+                            risk_reduction = 0.2
+                            risk_score = max(0, risk_score - risk_reduction)
+                            
+                            # Recalculate risk level based on new score
+                            # Thresholds: HIGH >= 75%, MEDIUM >= 45%, LOW >= 25%, NONE < 25%
+                            old_risk_level = risk_level
+                            if risk_score >= 0.75:
+                                risk_level = 'HIGH'
+                            elif risk_score >= 0.45:
+                                risk_level = 'MEDIUM'
+                            elif risk_score >= 0.25:
+                                risk_level = 'LOW'
+                            else:
+                                risk_level = 'NONE'
+                            
+                            # Adjust stats if risk level changed
+                            if old_risk_level != risk_level:
+                                # Decrement old level
+                                if old_risk_level == 'HIGH':
+                                    stats['high_risk'] -= 1
+                                elif old_risk_level == 'MEDIUM':
+                                    stats['medium_risk'] -= 1
+                                elif old_risk_level == 'LOW':
+                                    stats['low_risk'] -= 1
+                                else:
+                                    stats['none_risk'] -= 1
+                                # Increment new level
+                                if risk_level == 'HIGH':
+                                    stats['high_risk'] += 1
+                                elif risk_level == 'MEDIUM':
+                                    stats['medium_risk'] += 1
+                                elif risk_level == 'LOW':
+                                    stats['low_risk'] += 1
+                                else:
+                                    stats['none_risk'] += 1
+                            
+                            image_analysis = {
+                                'contains_weapons': False,
+                                'weapon_count': 0,
+                                'image_verified_safe': True,
+                                'risk_reduction_applied': risk_reduction,
+                                'analysis_notes': image_result.analysis_notes,
+                                'processing_time_ms': image_result.processing_time_ms
+                            }
+                    except Exception as img_err:
+                        log_print(f"⚠️ Image analysis error for {post.id}: {img_err}")
+                        image_analysis = {
+                            'error': str(img_err),
+                            'contains_weapons': False
+                        }
+                
+                # LLM analysis for illegal weapon trade detection
+                llm_result = None
+                if llm_available and llm_analyzer:
+                    try:
+                        stats['llm_analyzed'] += 1
+                        llm_response = await llm_analyzer.analyze_post(
+                            title=post.title,
+                            content=post.content or '',
+                            source=post.subreddit
+                        )
+                        
+                        llm_result = llm_response.to_dict()
+                        
+                        # If LLM detects potentially illegal trade, upgrade risk
+                        if llm_response.is_potentially_illegal:
+                            stats['illegal_trade_detected'] += 1
+                            
+                            # Set risk to CRITICAL or HIGH based on LLM assessment
+                            old_risk_level = risk_level
+                            if llm_response.risk_assessment == 'CRITICAL':
+                                risk_score = 1.0
+                                risk_level = 'CRITICAL'
+                            elif llm_response.risk_assessment == 'HIGH' and risk_level != 'CRITICAL':
+                                risk_score = max(risk_score, 0.85)
+                                risk_level = 'HIGH'
+                            
+                            # Adjust stats if risk level changed
+                            if old_risk_level != risk_level and old_risk_level in ['HIGH', 'MEDIUM', 'LOW']:
+                                if old_risk_level == 'HIGH':
+                                    stats['high_risk'] -= 1
+                                elif old_risk_level == 'MEDIUM':
+                                    stats['medium_risk'] -= 1
+                                else:
+                                    stats['low_risk'] -= 1
+                                
+                                stats['high_risk'] += 1  # Illegal trade = high risk
+                        
+                        # If LLM says not weapon related, reduce risk
+                        elif not llm_response.is_weapon_related and risk_score > 0:
+                            risk_reduction = 0.3
+                            old_risk_level = risk_level
+                            risk_score = max(0, risk_score - risk_reduction)
+                            
+                            # Thresholds: HIGH >= 75%, MEDIUM >= 45%, LOW >= 25%, NONE < 25%
+                            if risk_score >= 0.75:
+                                risk_level = 'HIGH'
+                            elif risk_score >= 0.45:
+                                risk_level = 'MEDIUM'
+                            elif risk_score >= 0.25:
+                                risk_level = 'LOW'
+                            else:
+                                risk_level = 'NONE'
+                            
+                            if old_risk_level != risk_level:
+                                if old_risk_level == 'HIGH':
+                                    stats['high_risk'] -= 1
+                                elif old_risk_level == 'MEDIUM':
+                                    stats['medium_risk'] -= 1
+                                elif old_risk_level == 'LOW':
+                                    stats['low_risk'] -= 1
+                                else:
+                                    stats['none_risk'] -= 1
+                                
+                                if risk_level == 'HIGH':
+                                    stats['high_risk'] += 1
+                                elif risk_level == 'MEDIUM':
+                                    stats['medium_risk'] += 1
+                                elif risk_level == 'LOW':
+                                    stats['low_risk'] += 1
+                                else:
+                                    stats['none_risk'] += 1
+                                    
+                    except Exception as llm_err:
+                        log_print(f"⚠️ LLM analysis error for {post.id}: {llm_err}")
+                        llm_result = {
+                            'error': str(llm_err),
+                            'is_potentially_illegal': False
+                        }
+                
+                # Build post data with image fields
+                post_data = {
+                    'id': post.id,
+                    'title': post.title,
+                    'content': post.content[:500] if post.content else '',
+                    'subreddit': post.subreddit,
+                    'author_hash': post.author_hash,
+                    'score': post.score,
+                    'num_comments': post.num_comments,
+                    'url': post.url,
+                    'created_utc': post.created_at,
+                    'collected_at': post.collected_at,
+                    'platform': 'reddit',
+                    # Image/media fields from enhanced RedditPost
+                    'image_url': post.image_url,
+                    'thumbnail': post.thumbnail,
+                    'media_type': post.media_type,
+                    'gallery_images': post.gallery_images,
+                    'is_video': post.is_video,
+                    'video_url': post.video_url,
+                    # Weapon detection results
+                    'image_analysis': image_analysis,
+                    'annotated_image': annotated_image,
+                    # LLM illegal trade analysis
+                    'llm_analysis': llm_result,
+                    'risk_analysis': {
+                        'risk_score': risk_score,
+                        'risk_level': risk_level,
+                        'confidence': analysis.get('confidence', 0),
+                        'flags': analysis.get('flags', []),
+                        'detected_keywords': analysis.get('detected_keywords', []),
+                        'detected_patterns': analysis.get('detected_patterns', [])
+                    }
+                }
+                
+                # Skip posts with NONE risk (below 25%) - not relevant
+                if risk_level == 'NONE':
+                    stats['total'] -= 1  # Don't count skipped posts
+                    stats['none_risk'] -= 1
+                    continue
+                
+                # Send post event
+                yield {
+                    "event": "post",
+                    "data": _json.dumps(post_data)
+                }
+                
+                # Small delay between posts for smooth UI updates
+                await asyncio.sleep(0.1)
+            
+        except Exception as e:
+            log_print(f"❌ Collection error: {e}")
+            yield {
+                "event": "error",
+                "data": _json.dumps({"message": str(e), "fatal": True})
+            }
+        
+        # Log completion summary
+        log_print(f"✅ Collection complete: {stats['total_scanned']} scanned, {stats['high_risk']} HIGH, {stats['medium_risk']} MEDIUM, {stats['low_risk']} LOW, {stats['none_risk']} filtered")
+        
+        # Send completion event
+        yield {
+            "event": "complete",
+            "data": _json.dumps({
+                "total_scanned": stats['total_scanned'],  # Total posts scanned
+                "total_collected": stats['total'],         # Posts with risk >= 25%
+                "high_risk_count": stats['high_risk'],
+                "medium_risk_count": stats['medium_risk'],
+                "low_risk_count": stats['low_risk'],
+                "filtered_out": stats['none_risk'],        # Posts below 25% risk, not shown
+                "images_analyzed": stats['images_analyzed'],
+                "weapons_detected": stats['weapons_detected'],
+                "llm_analyzed": stats['llm_analyzed'],
+                "illegal_trade_detected": stats['illegal_trade_detected'],
+                "vision_enabled": vision_available,
+                "llm_enabled": llm_available,
+                "subreddits_collected": subreddit_list,
+                "timestamp": datetime.now().isoformat()
+            })
+        }
+    
+    return EventSourceResponse(event_generator())
+
+
+@app.get("/api/stream/telegram")
+async def stream_telegram_collection(
+    channels: str = _Query(..., description="Comma-separated list of channels/groups"),
+    limit: int = _Query(default=50, ge=1, le=200, description="Messages per channel")
+):
+    """
+    Stream Telegram messages as they are collected and analyzed using Server-Sent Events.
+    Uses Telethon (User API) to scrape public channels directly.
+    Requires TELEGRAM_API_ID and TELEGRAM_API_HASH to be configured.
+    Run 'python scripts/telegram_auth.py' first to authenticate.
+    """
+    if not SSE_AVAILABLE:
+        raise HTTPException(
+            status_code=500,
+            detail="SSE streaming not available. Install sse-starlette package."
+        )
+    
+    # Check for Telegram User API credentials
+    api_id = os.getenv('TELEGRAM_API_ID')
+    api_hash = os.getenv('TELEGRAM_API_HASH')
+    session_name = os.getenv('TELEGRAM_SESSION_NAME', 'weapons_detection_session')
+    
+    if not api_id or not api_hash:
+        raise HTTPException(
+            status_code=400,
+            detail="Telegram API not configured. Add TELEGRAM_API_ID and TELEGRAM_API_HASH to .env file. "
+                   "Get credentials from https://my.telegram.org"
+        )
+    
+    channel_list = [c.strip().lstrip('@') for c in channels.split(',') if c.strip()]
+    
+    async def event_generator():
+        """Generate SSE events for Telegram messages from public channels"""
+        stats = {
+            'total': 0,
+            'high_risk': 0,
+            'medium_risk': 0,
+            'low_risk': 0
+        }
+        
+        # Send start event
+        yield {
+            "event": "start",
+            "data": _json.dumps({
+                "channels": channel_list,
+                "limit": limit,
+                "timestamp": datetime.now().isoformat(),
+                "method": "telethon_user_api"
+            })
+        }
+        
+        client = None
+        try:
+            from telethon import TelegramClient
+            from telethon.errors import ChannelPrivateError, UsernameNotOccupiedError
+            
+            # Create client
+            client = TelegramClient(session_name, int(api_id), api_hash)
+            await client.connect()
+            
+            # Check if authenticated
+            if not await client.is_user_authorized():
+                yield {
+                    "event": "error",
+                    "data": _json.dumps({
+                        "message": "Not authenticated. Run 'python scripts/telegram_auth.py' to authenticate first.",
+                        "configured": False,
+                        "action_required": "Run authentication script"
+                    })
+                }
+                return
+            
+            # Get user info
+            me = await client.get_me()
+            yield {
+                "event": "info",
+                "data": _json.dumps({
+                    "message": f"Connected as: {me.first_name} (@{me.username})",
+                    "configured": True,
+                    "method": "user_api"
+                })
+            }
+            
+            await asyncio.sleep(0.1)
+            
+            # Iterate through each channel
+            for channel_username in channel_list:
+                try:
+                    yield {
+                        "event": "info",
+                        "data": _json.dumps({
+                            "message": f"Collecting from @{channel_username}...",
+                            "channel": channel_username
+                        })
+                    }
+                    
+                    # Get channel entity
+                    try:
+                        channel = await client.get_entity(channel_username)
+                        channel_title = getattr(channel, 'title', channel_username)
+                    except UsernameNotOccupiedError:
+                        yield {
+                            "event": "info",
+                            "data": _json.dumps({
+                                "message": f"Channel @{channel_username} not found, skipping...",
+                                "channel": channel_username,
+                                "error": "not_found"
+                            })
+                        }
+                        continue
+                    except ChannelPrivateError:
+                        yield {
+                            "event": "info",
+                            "data": _json.dumps({
+                                "message": f"Channel @{channel_username} is private, skipping...",
+                                "channel": channel_username,
+                                "error": "private"
+                            })
+                        }
+                        continue
+                    
+                    # Collect messages
+                    msg_count = 0
+                    async for message in client.iter_messages(channel, limit=limit):
+                        if not message.text:
+                            continue
+                        
+                        msg_count += 1
+                        
+                        # Analyze message
+                        analysis = analyzer.analyze_text(message.text)
+                        
+                        # Determine risk level
+                        if analysis['risk_score'] >= 0.7:
+                            risk_level = 'HIGH'
+                            stats['high_risk'] += 1
+                        elif analysis['risk_score'] >= 0.4:
+                            risk_level = 'MEDIUM'
+                            stats['medium_risk'] += 1
+                        else:
+                            risk_level = 'LOW'
+                            stats['low_risk'] += 1
+                        
+                        stats['total'] += 1
+                        
+                        # Hash sender for privacy
+                        sender_id = str(message.sender_id) if message.sender_id else "anonymous"
+                        from backend_service.utils.hashing import hash_username
+                        author_hash = hash_username(sender_id)
+                        
+                        # Build post data
+                        post_data = {
+                            'id': f"tg-{channel_username}-{message.id}",
+                            'title': message.text[:100] + "..." if len(message.text) > 100 else message.text,
+                            'content': message.text[:500],
+                            'author_hash': author_hash,
+                            'platform': 'telegram',
+                            'subreddit': f"@{channel_username}",  # Use subreddit field for channel
+                            'chat_title': channel_title,
+                            'chat_type': 'channel',
+                            'url': f"https://t.me/{channel_username}/{message.id}",
+                            'created_at': message.date.timestamp() if message.date else None,
+                            'collected_at': datetime.now().isoformat(),
+                            'views': getattr(message, 'views', None),
+                            'forwards': getattr(message, 'forwards', None),
+                            'risk_analysis': {
+                                'risk_score': analysis['risk_score'],
+                                'risk_level': risk_level,
+                                'confidence': analysis['confidence'],
+                                'keywords_found': analysis.get('keywords_found', []),
+                                'categories': analysis.get('categories', [])
+                            }
+                        }
+                        
+                        yield {
+                            "event": "post",
+                            "data": _json.dumps(post_data)
+                        }
+                        
+                        # Small delay to avoid rate limits
+                        await asyncio.sleep(0.05)
+                    
+                    yield {
+                        "event": "info",
+                        "data": _json.dumps({
+                            "message": f"Collected {msg_count} messages from @{channel_username}",
+                            "channel": channel_username,
+                            "count": msg_count
+                        })
+                    }
+                    
+                    # Delay between channels
+                    await asyncio.sleep(0.5)
+                    
+                except Exception as e:
+                    yield {
+                        "event": "info",
+                        "data": _json.dumps({
+                            "message": f"Error collecting from @{channel_username}: {str(e)}",
+                            "channel": channel_username,
+                            "error": str(e)
+                        })
+                    }
+                    continue
+            
+        except ImportError:
+            logger.error("❌ Telethon not installed")
+            yield {
+                "event": "error",
+                "data": _json.dumps({
+                    "message": "Telethon not installed. Run: pip install telethon",
+                    "configured": False
+                })
+            }
+        except Exception as e:
+            yield {
+                "event": "error",
+                "data": _json.dumps({
+                    "message": f"Collection error: {str(e)}",
+                    "configured": True
+                })
+            }
+        finally:
+            if client:
+                await client.disconnect()
+        
+        # Send completion event
+        yield {
+            "event": "complete",
+            "data": _json.dumps({
+                "total_collected": stats['total'],
+                "high_risk_count": stats['high_risk'],
+                "medium_risk_count": stats['medium_risk'],
+                "low_risk_count": stats['low_risk'],
+                "channels_collected": channel_list,
+                "timestamp": datetime.now().isoformat()
+            })
+        }
+    
+    return EventSourceResponse(event_generator())
+
+
+@app.get("/api/telegram/config-status")
+async def telegram_config_status():
+    """Check Telegram API configuration status"""
+    bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+    
+    result = {
+        "is_configured": bool(bot_token),
+        "method": "bot_api" if bot_token else None,
+        "bot_token_set": bool(bot_token),
+    }
+    
+    # Verify bot if token is set
+    if bot_token:
+        try:
+            from backend_service.handlers.telegram_bot_handler import TelegramBotHandler
+            handler = TelegramBotHandler(bot_token=bot_token)
+            verification = handler.verify_token()
+            result["bot_verified"] = verification.get('ok', False)
+            result["bot_username"] = verification.get('bot_username')
+            result["bot_name"] = verification.get('bot_name')
+            if not verification.get('ok'):
+                result["error"] = verification.get('error')
+        except Exception as e:
+            result["bot_verified"] = False
+            result["error"] = str(e)
+    
+    return result
+
 
 @app.get("/api/reddit/config-status")
 async def reddit_config_status():
@@ -832,6 +1736,117 @@ async def analyze_content_llm(
     return base
 
 
+
+
+# -----------------------------
+# Image Analysis Endpoints (Weapon Detection with LLaVA)
+# -----------------------------
+
+@app.get("/api/image/status")
+async def image_analysis_status():
+    """Check if image analysis (LLaVA vision model) is available."""
+    try:
+        from backend_service.handlers.image_analysis_handler import ImageAnalysisHandler
+        handler = ImageAnalysisHandler()
+        model_available = await handler.check_model_available()
+        
+        return {
+            "status": "ready" if model_available else "model_not_found",
+            "ollama_base": handler.ollama_base,
+            "vision_model": handler.vision_model,
+            "model_available": model_available,
+            "message": "LLaVA vision model is ready for weapon detection" if model_available 
+                       else f"Vision model '{handler.vision_model}' not found. Run: ollama pull llava:7b"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "message": "Image analysis unavailable"
+        }
+
+
+@app.post("/api/image/analyze")
+async def analyze_image_for_weapons(request: Dict[str, Any]):
+    """
+    Analyze a single image for weapons using LLaVA vision model.
+    
+    Request body:
+    {
+        "image_url": "https://example.com/image.jpg"
+    }
+    
+    Returns weapon detections with annotated image.
+    """
+    image_url = request.get("image_url")
+    if not image_url:
+        raise HTTPException(status_code=400, detail="image_url is required")
+    
+    try:
+        from backend_service.handlers.image_analysis_handler import ImageAnalysisHandler
+        handler = ImageAnalysisHandler()
+        
+        # Check if model is available
+        if not await handler.check_model_available():
+            raise HTTPException(
+                status_code=503,
+                detail=f"Vision model '{handler.vision_model}' not available. Run: ollama pull llava:7b"
+            )
+        
+        result = await handler.analyze_image(image_url)
+        return result.to_dict()
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+
+@app.post("/api/image/analyze_batch")
+async def analyze_images_batch(request: Dict[str, Any]):
+    """
+    Analyze multiple images for weapons.
+    
+    Request body:
+    {
+        "image_urls": ["url1", "url2", ...],
+        "max_concurrent": 3  // optional
+    }
+    
+    Returns list of weapon detection results.
+    """
+    image_urls = request.get("image_urls", [])
+    max_concurrent = request.get("max_concurrent", 3)
+    
+    if not image_urls:
+        raise HTTPException(status_code=400, detail="image_urls list is required")
+    
+    if len(image_urls) > 20:
+        raise HTTPException(status_code=400, detail="Maximum 20 images per batch")
+    
+    try:
+        from backend_service.handlers.image_analysis_handler import ImageAnalysisHandler
+        handler = ImageAnalysisHandler()
+        
+        if not await handler.check_model_available():
+            raise HTTPException(
+                status_code=503,
+                detail=f"Vision model '{handler.vision_model}' not available. Run: ollama pull llava:7b"
+            )
+        
+        results = await handler.analyze_batch(image_urls, max_concurrent=max_concurrent)
+        
+        return {
+            "total_analyzed": len(results),
+            "weapons_found": sum(1 for r in results if r.contains_weapons),
+            "high_risk_images": sum(1 for r in results if r.overall_risk == "HIGH"),
+            "results": [r.to_dict() for r in results]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Batch analysis failed: {str(e)}")
 
 
 if __name__ == "__main__":

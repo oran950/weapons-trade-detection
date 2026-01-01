@@ -109,19 +109,8 @@ class RedditHandler:
                     str(post.author) if post.author else "anonymous"
                 )
                 
-                reddit_post = RedditPost(
-                    id=post.id,
-                    title=post.title,
-                    content=post.selftext if hasattr(post, 'selftext') else "",
-                    subreddit=subreddit_name,
-                    author_hash=author_hash,
-                    score=post.score,
-                    num_comments=post.num_comments,
-                    created_at=post.created_utc,
-                    url=f"https://reddit.com{post.permalink}",
-                    collected_at=datetime.now().isoformat(),
-                    platform="reddit"
-                )
+                # Use the enhanced from_praw_submission method for image extraction
+                reddit_post = RedditPost.from_praw_submission(post, author_hash)
                 
                 collected_posts.append(reddit_post)
             
@@ -180,19 +169,8 @@ class RedditHandler:
                         str(post.author) if post.author else "anonymous"
                     )
                     
-                    reddit_post = RedditPost(
-                        id=post.id,
-                        title=post.title,
-                        content=post.selftext if hasattr(post, 'selftext') else "",
-                        subreddit=subreddit_name,
-                        author_hash=author_hash,
-                        score=post.score,
-                        num_comments=post.num_comments,
-                        created_at=post.created_utc,
-                        url=f"https://reddit.com{post.permalink}",
-                        collected_at=datetime.now().isoformat(),
-                        platform="reddit"
-                    )
+                    # Use the enhanced from_praw_submission method for image extraction
+                    reddit_post = RedditPost.from_praw_submission(post, author_hash)
                     
                     collected_posts.append(reddit_post)
             
