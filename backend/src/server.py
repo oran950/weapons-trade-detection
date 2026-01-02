@@ -354,7 +354,7 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
                 llm_analyzer_inst = LLMTextAnalyzer(
                     ollama_base=AppConfig.ollama.BASE,
                     model=AppConfig.ollama.MODEL,
-                    timeout=90  # Reduced timeout for faster 3b model
+                    timeout=120  # 2 minutes for CPU-based LLM
                 )
                 log_print(f"📝 LLM initialized: model={AppConfig.ollama.MODEL}")
             except ImportError:
@@ -372,8 +372,8 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
         log_print(f"📊 Job {job_id}: {len(posts_to_analyze)}/{len(all_posts)} posts need AI analysis")
         job_store.update_job(job_id, total=len(posts_to_analyze))
         
-        # Parallel analysis with semaphore (limit to 3 concurrent)
-        semaphore = asyncio.Semaphore(3)
+        # Sequential analysis (Ollama CPU can only handle 1 at a time)
+        semaphore = asyncio.Semaphore(1)
         analyzed_count = [0]  # Use list for mutable counter in closure
         
         async def analyze_single_post(post, analysis, base_risk_score):
