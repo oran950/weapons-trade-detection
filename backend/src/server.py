@@ -359,110 +359,127 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
             except ImportError:
                 pass
         
-        # Analyze posts (simplified - no parallel for background job stability)
-        for idx, post in enumerate(all_posts):
-            if job_store.get_job(job_id).status == JobStatus.CANCELLED:
-                log_print(f"❌ Job {job_id} cancelled during analysis")
-                return
-            
-            # Basic text analysis
+        # Pre-filter posts by text risk score (fast, no AI needed)
+        posts_to_analyze = []
+        for post in all_posts:
             combined_text = f"{post.title} {post.content or ''}"
             analysis = analyzer.analyze_text(combined_text)
-            
             risk_score = analysis.get('risk_score', 0)
-            if risk_score >= 0.75:
-                risk_level = 'HIGH'
-            elif risk_score >= 0.45:
-                risk_level = 'MEDIUM'
-            elif risk_score >= 0.25:
-                risk_level = 'LOW'
-            else:
-                risk_level = 'NONE'
-            
-            # Skip NONE risk posts
-            if risk_level == 'NONE':
-                continue
-            
-            # LLM analysis if available
-            llm_result = None
-            if llm_analyzer_inst and risk_score >= 0.25:
-                try:
-                    llm_response = await llm_analyzer_inst.analyze_post(
-                        title=post.title,
-                        content=post.content or '',
-                        source=post.subreddit
-                    )
-                    llm_result = llm_response.to_dict()
-                except Exception as e:
-                    log_print(f"⚠️ Job {job_id}: LLM error: {e}")
-            
-            # Image analysis if available
-            image_analysis_result = None
-            annotated_image = None
-            if image_analyzer and post.image_url and not post.is_video and risk_score >= 0.25:
-                try:
-                    image_result = await image_analyzer.analyze_image(post.image_url)
-                    if image_result.contains_weapons:
-                        image_analysis_result = {
-                            'contains_weapons': True,
-                            'weapon_count': image_result.weapon_count,
-                            'detections': [d.to_dict() for d in image_result.detections],
-                            'overall_risk': image_result.overall_risk,
-                            'analysis_notes': image_result.analysis_notes,
-                            'processing_time_ms': image_result.processing_time_ms
-                        }
-                        annotated_image = image_result.annotated_image_base64
-                        # Boost risk for weapon images
-                        if image_result.overall_risk == 'HIGH':
-                            risk_level = 'HIGH'
-                            risk_score = max(risk_score, image_result.risk_score)
-                    else:
-                        image_analysis_result = {
-                            'contains_weapons': False,
-                            'weapon_count': 0,
-                            'image_verified_safe': image_result.analysis_completed,
-                            'analysis_completed': image_result.analysis_completed,
-                            'analysis_notes': image_result.analysis_notes,
-                            'processing_time_ms': image_result.processing_time_ms
-                        }
-                except Exception as e:
-                    log_print(f"⚠️ Job {job_id}: Image analysis error: {e}")
-                    image_analysis_result = {'error': str(e), 'contains_weapons': False}
-            
-            # Build post data
-            post_data = {
-                'id': post.id,
-                'title': post.title,
-                'content': post.content[:500] if post.content else '',
-                'subreddit': post.subreddit,
-                'author_hash': post.author_hash,
-                'score': post.score,
-                'num_comments': post.num_comments,
-                'url': post.url,
-                'created_utc': post.created_at,
-                'collected_at': post.collected_at,
-                'platform': 'reddit',
-                'image_url': post.image_url,
-                'thumbnail': post.thumbnail,
-                'media_type': post.media_type,
-                'gallery_images': getattr(post, 'gallery_images', None),
-                'is_video': post.is_video,
-                'video_url': post.video_url,
-                'image_analysis': image_analysis_result,
-                'annotated_image': annotated_image,
-                'llm_analysis': llm_result,
-                'risk_analysis': {
-                    'risk_score': risk_score,
-                    'risk_level': risk_level,
-                    'confidence': analysis.get('confidence', 0),
-                    'flags': analysis.get('flags', []),
-                    'detected_keywords': analysis.get('detected_keywords', []),
-                    'detected_patterns': analysis.get('detected_patterns', [])
+            if risk_score >= 0.25:  # Only analyze posts with some risk
+                posts_to_analyze.append((post, analysis, risk_score))
+        
+        log_print(f"📊 Job {job_id}: {len(posts_to_analyze)}/{len(all_posts)} posts need AI analysis")
+        job_store.update_job(job_id, total=len(posts_to_analyze))
+        
+        # Parallel analysis with semaphore (limit to 3 concurrent)
+        semaphore = asyncio.Semaphore(3)
+        analyzed_count = [0]  # Use list for mutable counter in closure
+        
+        async def analyze_single_post(post, analysis, base_risk_score):
+            """Analyze a single post with LLM and image analysis"""
+            async with semaphore:
+                if job_store.get_job(job_id).status == JobStatus.CANCELLED:
+                    return None
+                
+                risk_score = base_risk_score
+                if risk_score >= 0.75:
+                    risk_level = 'HIGH'
+                elif risk_score >= 0.45:
+                    risk_level = 'MEDIUM'
+                else:
+                    risk_level = 'LOW'
+                
+                # LLM analysis
+                llm_result = None
+                if llm_analyzer_inst:
+                    try:
+                        llm_response = await llm_analyzer_inst.analyze_post(
+                            title=post.title,
+                            content=post.content or '',
+                            source=post.subreddit
+                        )
+                        llm_result = llm_response.to_dict()
+                    except Exception as e:
+                        log_print(f"⚠️ Job {job_id}: LLM error: {e}")
+                
+                # Image analysis (skip for now - too slow, causing timeouts)
+                # TODO: Re-enable when vision model is faster or use async queue
+                image_analysis_result = None
+                annotated_image = None
+                if False and image_analyzer and post.image_url and not post.is_video:
+                    try:
+                        image_result = await image_analyzer.analyze_image(post.image_url)
+                        if image_result.contains_weapons:
+                            image_analysis_result = {
+                                'contains_weapons': True,
+                                'weapon_count': image_result.weapon_count,
+                                'detections': [d.to_dict() for d in image_result.detections],
+                                'overall_risk': image_result.overall_risk,
+                                'analysis_notes': image_result.analysis_notes,
+                                'processing_time_ms': image_result.processing_time_ms
+                            }
+                            annotated_image = image_result.annotated_image_base64
+                            if image_result.overall_risk == 'HIGH':
+                                risk_level = 'HIGH'
+                                risk_score = max(risk_score, image_result.risk_score)
+                        else:
+                            image_analysis_result = {
+                                'contains_weapons': False,
+                                'weapon_count': 0,
+                                'image_verified_safe': image_result.analysis_completed,
+                                'analysis_completed': image_result.analysis_completed,
+                                'analysis_notes': image_result.analysis_notes,
+                                'processing_time_ms': image_result.processing_time_ms
+                            }
+                    except Exception as e:
+                        log_print(f"⚠️ Job {job_id}: Image error: {e}")
+                        image_analysis_result = {'error': str(e), 'contains_weapons': False}
+                
+                # Update progress
+                analyzed_count[0] += 1
+                job_store.update_job(job_id, progress=analyzed_count[0], 
+                                    phase_message=f"Analyzed {analyzed_count[0]}/{len(posts_to_analyze)} posts (parallel)")
+                
+                return {
+                    'id': post.id,
+                    'title': post.title,
+                    'content': post.content[:500] if post.content else '',
+                    'subreddit': post.subreddit,
+                    'author_hash': post.author_hash,
+                    'score': post.score,
+                    'num_comments': post.num_comments,
+                    'url': post.url,
+                    'created_utc': post.created_at,
+                    'collected_at': post.collected_at,
+                    'platform': 'reddit',
+                    'image_url': post.image_url,
+                    'thumbnail': post.thumbnail,
+                    'media_type': post.media_type,
+                    'gallery_images': getattr(post, 'gallery_images', None),
+                    'is_video': post.is_video,
+                    'video_url': post.video_url,
+                    'image_analysis': image_analysis_result,
+                    'annotated_image': annotated_image,
+                    'llm_analysis': llm_result,
+                    'risk_analysis': {
+                        'risk_score': risk_score,
+                        'risk_level': risk_level,
+                        'confidence': analysis.get('confidence', 0),
+                        'flags': analysis.get('flags', []),
+                        'detected_keywords': analysis.get('detected_keywords', []),
+                        'detected_patterns': analysis.get('detected_patterns', [])
+                    }
                 }
-            }
-            
-            job_store.add_post(job_id, post_data)
-            job_store.update_job(job_id, progress=idx + 1, phase_message=f"Analyzed {idx + 1}/{len(all_posts)} posts")
+        
+        # Run all analyses in parallel (limited by semaphore)
+        tasks = [analyze_single_post(post, analysis, risk_score) 
+                 for post, analysis, risk_score in posts_to_analyze]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Add successful results to job
+        for result in results:
+            if result and not isinstance(result, Exception):
+                job_store.add_post(job_id, result)
         
         # Complete the job
         job = job_store.get_job(job_id)
