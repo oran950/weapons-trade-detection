@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 
 // Types
 export interface WeaponDetection {
@@ -151,6 +151,33 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AppState>(defaultState);
 
+  // Check backend health on mount and periodically
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await fetch('http://localhost:9000/health');
+        if (response.ok) {
+          const data = await response.json();
+          setState(prev => ({
+            ...prev,
+            backendOnline: true,
+            redditConfigured: data.reddit_configured ?? false,
+            telegramConfigured: data.telegram_configured ?? false,
+            ollamaAvailable: data.ollama_available ?? false,
+          }));
+        } else {
+          setState(prev => ({ ...prev, backendOnline: false }));
+        }
+      } catch {
+        setState(prev => ({ ...prev, backendOnline: false }));
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 10000); // Check every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   const startCollection = useCallback((platform: 'reddit' | 'telegram') => {
     setState(prev => ({
       ...prev,
@@ -171,6 +198,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const addPost = useCallback((post: Post) => {
     setState(prev => {
+      // Check for duplicate - skip if post with same ID already exists
+      if (prev.posts.some(p => p.id === post.id)) {
+        return prev;
+      }
+      
       const riskLevel = post.risk_analysis?.risk_level || 'LOW';
       return {
         ...prev,
@@ -188,8 +220,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const addPosts = useCallback((posts: Post[]) => {
     setState(prev => {
+      // Filter out duplicates
+      const existingIds = new Set(prev.posts.map(p => p.id));
+      const newPosts = posts.filter(p => !existingIds.has(p.id));
+      
+      if (newPosts.length === 0) return prev;
+      
       let highDelta = 0, mediumDelta = 0, lowDelta = 0;
-      posts.forEach(p => {
+      newPosts.forEach(p => {
         const level = p.risk_analysis?.risk_level || 'LOW';
         if (level === 'HIGH') highDelta++;
         else if (level === 'MEDIUM') mediumDelta++;
@@ -197,7 +235,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
       return {
         ...prev,
-        posts: [...posts, ...prev.posts].slice(0, 500),
+        posts: [...newPosts, ...prev.posts].slice(0, 500),
         stats: {
           ...prev.stats,
           totalAnalyzed: prev.stats.totalAnalyzed + posts.length,

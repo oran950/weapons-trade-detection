@@ -16,9 +16,9 @@ const Header: React.FC = () => {
         <div style={styles.logo}>🎯</div>
         <div style={styles.titleContainer}>
           <h1 style={styles.title}>
-            <span style={styles.titleAccent}>TACTICAL</span> DETECTION GRID
+            <span style={styles.titleAccent}>WEAPONS</span> TRADE MONITOR
           </h1>
-          <p style={styles.subtitle}>WEAPONS TRADE DETECTION SYSTEM • ACADEMIC RESEARCH</p>
+          <p style={styles.subtitle}>ILLEGAL ARMS DETECTION SYSTEM • ACADEMIC RESEARCH</p>
         </div>
       </div>
 

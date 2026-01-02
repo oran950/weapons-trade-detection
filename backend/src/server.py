@@ -1,7 +1,11 @@
 import sys
 import os
 import logging
-
+import uuid
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Optional
+import threading
 # Log file path
 LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'server.log')
 
@@ -72,6 +76,132 @@ _LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
 _OLLAMA_BASE = os.getenv("OLLAMA_BASE", "http://localhost:11434")
 _OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 
+# =============================================================================
+# BACKGROUND JOB SYSTEM - Collections persist across page navigation/refresh
+# =============================================================================
+
+
+class JobStatus(str, Enum):
+    PENDING = "pending"
+    COLLECTING = "collecting"
+    ANALYZING = "analyzing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+@dataclass
+class CollectionJob:
+    """Represents a background collection job"""
+    id: str
+    platform: str
+    sources: List[str]
+    limit: int
+    status: JobStatus = JobStatus.PENDING
+    progress: int = 0
+    total: int = 0
+    phase_message: str = ""
+    posts: List[Dict] = field(default_factory=list)
+    summary: Optional[Dict] = None
+    error: Optional[str] = None
+    created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    
+    def to_dict(self) -> Dict:
+        return {
+            "id": self.id,
+            "platform": self.platform,
+            "sources": self.sources,
+            "limit": self.limit,
+            "status": self.status.value,
+            "progress": self.progress,
+            "total": self.total,
+            "phase_message": self.phase_message,
+            "posts_count": len(self.posts),
+            "summary": self.summary,
+            "error": self.error,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at
+        }
+
+class JobStore:
+    """In-memory store for collection jobs - persists across frontend disconnects"""
+    def __init__(self):
+        self._jobs: Dict[str, CollectionJob] = {}
+        self._lock = threading.Lock()
+        self._current_job_id: Optional[str] = None  # Track active job
+    
+    def create_job(self, platform: str, sources: List[str], limit: int) -> CollectionJob:
+        job_id = str(uuid.uuid4())[:8]
+        job = CollectionJob(
+            id=job_id,
+            platform=platform,
+            sources=sources,
+            limit=limit,
+            total=len(sources) * limit
+        )
+        with self._lock:
+            self._jobs[job_id] = job
+            self._current_job_id = job_id
+        return job
+    
+    def get_job(self, job_id: str) -> Optional[CollectionJob]:
+        return self._jobs.get(job_id)
+    
+    def get_current_job(self) -> Optional[CollectionJob]:
+        if self._current_job_id:
+            return self._jobs.get(self._current_job_id)
+        return None
+    
+    def get_active_job(self) -> Optional[CollectionJob]:
+        """Get any job that's currently running"""
+        for job in self._jobs.values():
+            if job.status in [JobStatus.PENDING, JobStatus.COLLECTING, JobStatus.ANALYZING]:
+                return job
+        return None
+    
+    def update_job(self, job_id: str, **kwargs):
+        job = self._jobs.get(job_id)
+        if job:
+            for key, value in kwargs.items():
+                if hasattr(job, key):
+                    setattr(job, key, value)
+            job.updated_at = datetime.now().isoformat()
+    
+    def add_post(self, job_id: str, post: Dict):
+        job = self._jobs.get(job_id)
+        if job:
+            job.posts.append(post)
+            job.progress = len(job.posts)
+            job.updated_at = datetime.now().isoformat()
+    
+    def cancel_job(self, job_id: str):
+        job = self._jobs.get(job_id)
+        if job and job.status in [JobStatus.PENDING, JobStatus.COLLECTING, JobStatus.ANALYZING]:
+            job.status = JobStatus.CANCELLED
+            job.updated_at = datetime.now().isoformat()
+            if self._current_job_id == job_id:
+                self._current_job_id = None
+    
+    def list_jobs(self, limit: int = 10) -> List[Dict]:
+        jobs = sorted(self._jobs.values(), key=lambda j: j.created_at, reverse=True)
+        return [j.to_dict() for j in jobs[:limit]]
+    
+    def cleanup_old_jobs(self, max_age_hours: int = 24):
+        """Remove jobs older than max_age_hours"""
+        now = datetime.now()
+        with self._lock:
+            to_remove = []
+            for job_id, job in self._jobs.items():
+                created = datetime.fromisoformat(job.created_at)
+                age_hours = (now - created).total_seconds() / 3600
+                if age_hours > max_age_hours and job.status in [JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED]:
+                    to_remove.append(job_id)
+            for job_id in to_remove:
+                del self._jobs[job_id]
+
+# Global job store instance
+job_store = JobStore()
+
 
 # Create FastAPI app
 app = FastAPI(
@@ -93,7 +223,298 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# =============================================================================
+# JOB API ENDPOINTS - For persistent background collection jobs
+# =============================================================================
 
+@app.get("/api/jobs/current")
+async def get_current_job():
+    """Get the currently active job (if any) - for reconnecting after page refresh"""
+    job = job_store.get_active_job()
+    log_print(f"🔄 Checking for active job: {'Found ' + job.id if job else 'None'}")
+    if job:
+        return {
+            "has_active_job": True,
+            "job": job.to_dict(),
+            "posts": job.posts[-50:]  # Return last 50 posts for live view
+        }
+    return {"has_active_job": False, "job": None, "posts": []}
+
+@app.get("/api/jobs/{job_id}")
+async def get_job_status(job_id: str):
+    """Get status and results of a specific job"""
+    job = job_store.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {
+        "job": job.to_dict(),
+        "posts": job.posts  # Include all collected posts
+    }
+
+@app.get("/api/jobs/{job_id}/posts")
+async def get_job_posts(job_id: str, offset: int = 0, limit: int = 50):
+    """Get posts from a job with pagination"""
+    job = job_store.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {
+        "total": len(job.posts),
+        "offset": offset,
+        "limit": limit,
+        "posts": job.posts[offset:offset + limit]
+    }
+
+@app.post("/api/jobs/{job_id}/cancel")
+async def cancel_job(job_id: str):
+    """Cancel a running job"""
+    job = job_store.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status not in [JobStatus.PENDING, JobStatus.COLLECTING, JobStatus.ANALYZING]:
+        raise HTTPException(status_code=400, detail="Job is not running")
+    job_store.cancel_job(job_id)
+    return {"success": True, "message": "Job cancelled"}
+
+@app.get("/api/jobs")
+async def list_jobs(limit: int = 10):
+    """List recent jobs"""
+    return {"jobs": job_store.list_jobs(limit)}
+
+
+class StartJobRequest(BaseModel):
+    platform: str = "reddit"
+    sources: List[str]  # subreddits or channels
+    limit: int = 10
+    analyze_images: bool = True
+    llm_analysis: bool = True
+
+
+# Background collection task that runs independently of SSE connection
+async def run_background_collection(job_id: str, platform: str, sources: List[str], 
+                                     limit: int, analyze_images: bool, llm_analysis: bool):
+    """Run collection in background - survives frontend disconnect"""
+    job = job_store.get_job(job_id)
+    if not job:
+        return
+    
+    try:
+        log_print(f"🚀 Background job {job_id} started: {platform} - {sources}")
+        job_store.update_job(job_id, status=JobStatus.COLLECTING, phase_message="Collecting posts...")
+        
+        # Import handlers
+        from backend_service.handlers.reddit_handler import RedditHandler
+        
+        handler = RedditHandler(
+            client_id=AppConfig.reddit.CLIENT_ID,
+            client_secret=AppConfig.reddit.CLIENT_SECRET,
+            user_agent=AppConfig.reddit.USER_AGENT
+        )
+        
+        # Collect posts
+        all_posts = []
+        for source in sources:
+            if job_store.get_job(job_id).status == JobStatus.CANCELLED:
+                log_print(f"❌ Job {job_id} cancelled during collection")
+                return
+            try:
+                posts = handler.collect_subreddit_posts(
+                    subreddit_name=source,
+                    time_filter="day",
+                    limit=limit,
+                    sort_method="hot"
+                )
+                all_posts.extend(posts)
+                log_print(f"📥 Job {job_id}: Collected {len(posts)} from r/{source}")
+            except Exception as e:
+                log_print(f"❌ Job {job_id}: Error collecting from r/{source}: {e}")
+        
+        job_store.update_job(job_id, 
+                            status=JobStatus.ANALYZING, 
+                            phase_message="Analyzing posts with AI...",
+                            total=len(all_posts))
+        
+        # Initialize analyzers
+        image_analyzer = None
+        llm_analyzer_inst = None
+        
+        if analyze_images:
+            try:
+                from backend_service.handlers.image_analysis_handler import ImageAnalysisHandler
+                image_analyzer = ImageAnalysisHandler(
+                    ollama_base=AppConfig.ollama.BASE,
+                    vision_model=AppConfig.ollama.VISION_MODEL,
+                    timeout=180
+                )
+            except ImportError:
+                pass
+        
+        if llm_analysis:
+            try:
+                from backend_service.handlers.llm_text_analyzer import LLMTextAnalyzer
+                llm_analyzer_inst = LLMTextAnalyzer(
+                    ollama_base=AppConfig.ollama.BASE,
+                    model=AppConfig.ollama.MODEL,
+                    timeout=180
+                )
+            except ImportError:
+                pass
+        
+        # Analyze posts (simplified - no parallel for background job stability)
+        for idx, post in enumerate(all_posts):
+            if job_store.get_job(job_id).status == JobStatus.CANCELLED:
+                log_print(f"❌ Job {job_id} cancelled during analysis")
+                return
+            
+            # Basic text analysis
+            combined_text = f"{post.title} {post.content or ''}"
+            analysis = analyzer.analyze_text(combined_text)
+            
+            risk_score = analysis.get('risk_score', 0)
+            if risk_score >= 0.75:
+                risk_level = 'HIGH'
+            elif risk_score >= 0.45:
+                risk_level = 'MEDIUM'
+            elif risk_score >= 0.25:
+                risk_level = 'LOW'
+            else:
+                risk_level = 'NONE'
+            
+            # Skip NONE risk posts
+            if risk_level == 'NONE':
+                continue
+            
+            # LLM analysis if available
+            llm_result = None
+            if llm_analyzer_inst and risk_score >= 0.25:
+                try:
+                    llm_response = await llm_analyzer_inst.analyze_post(
+                        title=post.title,
+                        content=post.content or '',
+                        source=post.subreddit
+                    )
+                    llm_result = llm_response.to_dict()
+                except Exception as e:
+                    log_print(f"⚠️ Job {job_id}: LLM error: {e}")
+            
+            # Image analysis if available
+            image_analysis_result = None
+            annotated_image = None
+            if image_analyzer and post.image_url and not post.is_video and risk_score >= 0.25:
+                try:
+                    image_result = await image_analyzer.analyze_image(post.image_url)
+                    if image_result.contains_weapons:
+                        image_analysis_result = {
+                            'contains_weapons': True,
+                            'weapon_count': image_result.weapon_count,
+                            'detections': [d.to_dict() for d in image_result.detections],
+                            'overall_risk': image_result.overall_risk,
+                            'analysis_notes': image_result.analysis_notes,
+                            'processing_time_ms': image_result.processing_time_ms
+                        }
+                        annotated_image = image_result.annotated_image_base64
+                        # Boost risk for weapon images
+                        if image_result.overall_risk == 'HIGH':
+                            risk_level = 'HIGH'
+                            risk_score = max(risk_score, image_result.risk_score)
+                    else:
+                        image_analysis_result = {
+                            'contains_weapons': False,
+                            'weapon_count': 0,
+                            'image_verified_safe': image_result.analysis_completed,
+                            'analysis_completed': image_result.analysis_completed,
+                            'analysis_notes': image_result.analysis_notes,
+                            'processing_time_ms': image_result.processing_time_ms
+                        }
+                except Exception as e:
+                    log_print(f"⚠️ Job {job_id}: Image analysis error: {e}")
+                    image_analysis_result = {'error': str(e), 'contains_weapons': False}
+            
+            # Build post data
+            post_data = {
+                'id': post.id,
+                'title': post.title,
+                'content': post.content[:500] if post.content else '',
+                'subreddit': post.subreddit,
+                'author_hash': post.author_hash,
+                'score': post.score,
+                'num_comments': post.num_comments,
+                'url': post.url,
+                'created_utc': post.created_at,
+                'collected_at': post.collected_at,
+                'platform': 'reddit',
+                'image_url': post.image_url,
+                'thumbnail': post.thumbnail,
+                'media_type': post.media_type,
+                'gallery_images': getattr(post, 'gallery_images', None),
+                'is_video': post.is_video,
+                'video_url': post.video_url,
+                'image_analysis': image_analysis_result,
+                'annotated_image': annotated_image,
+                'llm_analysis': llm_result,
+                'risk_analysis': {
+                    'risk_score': risk_score,
+                    'risk_level': risk_level,
+                    'confidence': analysis.get('confidence', 0),
+                    'flags': analysis.get('flags', []),
+                    'detected_keywords': analysis.get('detected_keywords', []),
+                    'detected_patterns': analysis.get('detected_patterns', [])
+                }
+            }
+            
+            job_store.add_post(job_id, post_data)
+            job_store.update_job(job_id, progress=idx + 1, phase_message=f"Analyzed {idx + 1}/{len(all_posts)} posts")
+        
+        # Complete the job
+        job = job_store.get_job(job_id)
+        summary = {
+            "total_collected": len(job.posts),
+            "high_risk_count": sum(1 for p in job.posts if p.get('risk_analysis', {}).get('risk_level') == 'HIGH'),
+            "medium_risk_count": sum(1 for p in job.posts if p.get('risk_analysis', {}).get('risk_level') == 'MEDIUM'),
+            "low_risk_count": sum(1 for p in job.posts if p.get('risk_analysis', {}).get('risk_level') == 'LOW'),
+            "sources": sources,
+            "timestamp": datetime.now().isoformat()
+        }
+        job_store.update_job(job_id, status=JobStatus.COMPLETED, summary=summary, phase_message="Complete!")
+        log_print(f"✅ Job {job_id} completed: {len(job.posts)} posts analyzed")
+        
+    except Exception as e:
+        log_print(f"❌ Job {job_id} failed: {e}")
+        job_store.update_job(job_id, status=JobStatus.FAILED, error=str(e))
+
+
+@app.post("/api/jobs/start")
+async def start_collection_job(request: StartJobRequest):
+    """Start a background collection job that persists across page navigation"""
+    # Check if there's already an active job
+    active = job_store.get_active_job()
+    if active:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"A job is already running (ID: {active.id}). Cancel it first or wait for completion."
+        )
+    
+    # Create the job
+    job = job_store.create_job(
+        platform=request.platform,
+        sources=request.sources,
+        limit=request.limit
+    )
+    
+    # Start background task
+    asyncio.create_task(run_background_collection(
+        job_id=job.id,
+        platform=request.platform,
+        sources=request.sources,
+        limit=request.limit,
+        analyze_images=request.analyze_images,
+        llm_analysis=request.llm_analysis
+    ))
+    
+    return {
+        "success": True,
+        "job_id": job.id,
+        "message": "Collection job started in background"
+    }
 
 
 # Pydantic models for API requests
@@ -705,18 +1126,27 @@ async def stream_reddit_collection(
     if analyze_images:
         try:
             from backend_service.handlers.image_analysis_handler import ImageAnalysisHandler
-            image_analyzer = ImageAnalysisHandler()
+            image_analyzer = ImageAnalysisHandler(
+                ollama_base=AppConfig.ollama.BASE,
+                vision_model=AppConfig.ollama.VISION_MODEL,
+                timeout=180  # LLaVA needs 60-120s per image
+            )
             # Check if vision model is available (non-blocking check)
         except ImportError:
             log_print("⚠️ Image analysis handler not available")
     
     # Initialize LLM text analyzer if enabled
+    # Use AppConfig.ollama.BASE for Docker compatibility
     llm_analyzer = None
     llm_available = False
     if llm_analysis:
         try:
             from backend_service.handlers.llm_text_analyzer import LLMTextAnalyzer
-            llm_analyzer = LLMTextAnalyzer()
+            llm_analyzer = LLMTextAnalyzer(
+                ollama_base=AppConfig.ollama.BASE,
+                model=AppConfig.ollama.MODEL,
+                timeout=180  # LLM can take time for detailed analysis
+            )
         except ImportError:
             log_print("⚠️ LLM text analyzer not available")
     
@@ -812,52 +1242,52 @@ async def stream_reddit_collection(
                     })
                 }
         
-        try:
-            post_index = 0
-            for post in all_posts:
-                post_index += 1
-                # Track total posts scanned (before any filtering)
-                stats['total_scanned'] += 1
-                
+        # =====================================================================
+        # PARALLEL ANALYSIS - Process posts concurrently for faster results
+        # Note: Ollama GPU can only process 1 image at a time, so we limit to 3
+        # to allow text analysis and I/O to overlap with vision processing
+        # =====================================================================
+        
+        # Semaphore to limit concurrent API calls (3 is optimal for Ollama)
+        analysis_semaphore = asyncio.Semaphore(3)
+        
+        async def analyze_single_post(post, post_index: int):
+            """Analyze a single post with vision and LLM - runs in parallel"""
+            async with analysis_semaphore:
                 log_print(f"📝 Analyzing post {post_index}/{len(all_posts)}: '{post.title[:50]}...' from r/{post.subreddit}")
                 
-                # Analyze the post content (text analysis)
+                # Analyze the post content (text analysis - fast, CPU-bound)
                 combined_text = f"{post.title} {post.content}"
                 analysis = analyzer.analyze_text(combined_text)
                 
                 # Determine risk level from text
-                # Thresholds: HIGH >= 75%, MEDIUM >= 45%, LOW >= 25%, NONE < 25%
                 risk_score = analysis.get('risk_score', 0)
                 if risk_score >= 0.75:
                     risk_level = 'HIGH'
-                    stats['high_risk'] += 1
                 elif risk_score >= 0.45:
                     risk_level = 'MEDIUM'
-                    stats['medium_risk'] += 1
                 elif risk_score >= 0.25:
                     risk_level = 'LOW'
-                    stats['low_risk'] += 1
                 else:
                     risk_level = 'NONE'
-                    stats['none_risk'] += 1
                 
-                stats['total'] += 1
-                
-                # Image weapon detection
+                # Image weapon detection - ONLY if text analysis shows some risk
+                # This saves ~60s per post with no text indicators
                 image_analysis = None
                 annotated_image = None
+                did_image_analysis = False
+                weapons_found = False
                 
-                # Analyze any post that has an image URL (not just media_type == 'image')
-                # This covers galleries, link posts with preview images, etc.
                 image_to_analyze = post.image_url or post.thumbnail
-                if vision_available and image_analyzer and image_to_analyze and not post.is_video:
+                # Only analyze images if text risk >= 25% (LOW) to save time
+                should_analyze_image = risk_score >= 0.25 or risk_level in ['LOW', 'MEDIUM', 'HIGH']
+                if vision_available and image_analyzer and image_to_analyze and not post.is_video and should_analyze_image:
                     try:
-                        stats['images_analyzed'] += 1
+                        did_image_analysis = True
                         image_result = await image_analyzer.analyze_image(image_to_analyze)
                         
                         if image_result.contains_weapons:
-                            stats['weapons_detected'] += 1
-                            # Upgrade risk level if weapons detected in image
+                            weapons_found = True
                             if image_result.overall_risk == 'HIGH' and risk_level != 'HIGH':
                                 risk_level = 'HIGH'
                                 risk_score = max(risk_score, image_result.risk_score)
@@ -872,64 +1302,44 @@ async def stream_reddit_collection(
                             }
                             annotated_image = image_result.annotated_image_base64
                         else:
-                            # NO WEAPONS DETECTED - Decrease risk score
-                            # If image was analyzed and is clean, reduce risk by 20%
-                            risk_reduction = 0.2
-                            risk_score = max(0, risk_score - risk_reduction)
+                            # Only mark as verified safe if analysis actually completed
+                            # (not if it timed out or errored)
+                            is_verified = getattr(image_result, 'analysis_completed', True)
                             
-                            # Recalculate risk level based on new score
-                            # Thresholds: HIGH >= 75%, MEDIUM >= 45%, LOW >= 25%, NONE < 25%
-                            old_risk_level = risk_level
-                            if risk_score >= 0.75:
-                                risk_level = 'HIGH'
-                            elif risk_score >= 0.45:
-                                risk_level = 'MEDIUM'
-                            elif risk_score >= 0.25:
-                                risk_level = 'LOW'
-                            else:
-                                risk_level = 'NONE'
-                            
-                            # Adjust stats if risk level changed
-                            if old_risk_level != risk_level:
-                                # Decrement old level
-                                if old_risk_level == 'HIGH':
-                                    stats['high_risk'] -= 1
-                                elif old_risk_level == 'MEDIUM':
-                                    stats['medium_risk'] -= 1
-                                elif old_risk_level == 'LOW':
-                                    stats['low_risk'] -= 1
+                            if is_verified:
+                                risk_reduction = 0.2
+                                risk_score = max(0, risk_score - risk_reduction)
+                                
+                                if risk_score >= 0.75:
+                                    risk_level = 'HIGH'
+                                elif risk_score >= 0.45:
+                                    risk_level = 'MEDIUM'
+                                elif risk_score >= 0.25:
+                                    risk_level = 'LOW'
                                 else:
-                                    stats['none_risk'] -= 1
-                                # Increment new level
-                                if risk_level == 'HIGH':
-                                    stats['high_risk'] += 1
-                                elif risk_level == 'MEDIUM':
-                                    stats['medium_risk'] += 1
-                                elif risk_level == 'LOW':
-                                    stats['low_risk'] += 1
-                                else:
-                                    stats['none_risk'] += 1
+                                    risk_level = 'NONE'
                             
                             image_analysis = {
                                 'contains_weapons': False,
                                 'weapon_count': 0,
-                                'image_verified_safe': True,
-                                'risk_reduction_applied': risk_reduction,
+                                'image_verified_safe': is_verified,  # Only True if analysis completed
+                                'analysis_completed': is_verified,
+                                'risk_reduction_applied': risk_reduction if is_verified else 0,
                                 'analysis_notes': image_result.analysis_notes,
                                 'processing_time_ms': image_result.processing_time_ms
                             }
                     except Exception as img_err:
                         log_print(f"⚠️ Image analysis error for {post.id}: {img_err}")
-                        image_analysis = {
-                            'error': str(img_err),
-                            'contains_weapons': False
-                        }
+                        image_analysis = {'error': str(img_err), 'contains_weapons': False, 'analysis_completed': False}
                 
                 # LLM analysis for illegal weapon trade detection
                 llm_result = None
+                did_llm_analysis = False
+                is_illegal = False
+                
                 if llm_available and llm_analyzer:
                     try:
-                        stats['llm_analyzed'] += 1
+                        did_llm_analysis = True
                         llm_response = await llm_analyzer.analyze_post(
                             title=post.title,
                             content=post.content or '',
@@ -938,37 +1348,18 @@ async def stream_reddit_collection(
                         
                         llm_result = llm_response.to_dict()
                         
-                        # If LLM detects potentially illegal trade, upgrade risk
                         if llm_response.is_potentially_illegal:
-                            stats['illegal_trade_detected'] += 1
-                            
-                            # Set risk to CRITICAL or HIGH based on LLM assessment
-                            old_risk_level = risk_level
+                            is_illegal = True
                             if llm_response.risk_assessment == 'CRITICAL':
                                 risk_score = 1.0
                                 risk_level = 'CRITICAL'
                             elif llm_response.risk_assessment == 'HIGH' and risk_level != 'CRITICAL':
                                 risk_score = max(risk_score, 0.85)
                                 risk_level = 'HIGH'
-                            
-                            # Adjust stats if risk level changed
-                            if old_risk_level != risk_level and old_risk_level in ['HIGH', 'MEDIUM', 'LOW']:
-                                if old_risk_level == 'HIGH':
-                                    stats['high_risk'] -= 1
-                                elif old_risk_level == 'MEDIUM':
-                                    stats['medium_risk'] -= 1
-                                else:
-                                    stats['low_risk'] -= 1
-                                
-                                stats['high_risk'] += 1  # Illegal trade = high risk
-                        
-                        # If LLM says not weapon related, reduce risk
                         elif not llm_response.is_weapon_related and risk_score > 0:
                             risk_reduction = 0.3
-                            old_risk_level = risk_level
                             risk_score = max(0, risk_score - risk_reduction)
                             
-                            # Thresholds: HIGH >= 75%, MEDIUM >= 45%, LOW >= 25%, NONE < 25%
                             if risk_score >= 0.75:
                                 risk_level = 'HIGH'
                             elif risk_score >= 0.45:
@@ -977,34 +1368,12 @@ async def stream_reddit_collection(
                                 risk_level = 'LOW'
                             else:
                                 risk_level = 'NONE'
-                            
-                            if old_risk_level != risk_level:
-                                if old_risk_level == 'HIGH':
-                                    stats['high_risk'] -= 1
-                                elif old_risk_level == 'MEDIUM':
-                                    stats['medium_risk'] -= 1
-                                elif old_risk_level == 'LOW':
-                                    stats['low_risk'] -= 1
-                                else:
-                                    stats['none_risk'] -= 1
-                                
-                                if risk_level == 'HIGH':
-                                    stats['high_risk'] += 1
-                                elif risk_level == 'MEDIUM':
-                                    stats['medium_risk'] += 1
-                                elif risk_level == 'LOW':
-                                    stats['low_risk'] += 1
-                                else:
-                                    stats['none_risk'] += 1
                                     
                     except Exception as llm_err:
                         log_print(f"⚠️ LLM analysis error for {post.id}: {llm_err}")
-                        llm_result = {
-                            'error': str(llm_err),
-                            'is_potentially_illegal': False
-                        }
+                        llm_result = {'error': str(llm_err), 'is_potentially_illegal': False}
                 
-                # Build post data with image fields
+                # Build post data
                 post_data = {
                     'id': post.id,
                     'title': post.title,
@@ -1017,17 +1386,14 @@ async def stream_reddit_collection(
                     'created_utc': post.created_at,
                     'collected_at': post.collected_at,
                     'platform': 'reddit',
-                    # Image/media fields from enhanced RedditPost
                     'image_url': post.image_url,
                     'thumbnail': post.thumbnail,
                     'media_type': post.media_type,
                     'gallery_images': post.gallery_images,
                     'is_video': post.is_video,
                     'video_url': post.video_url,
-                    # Weapon detection results
                     'image_analysis': image_analysis,
                     'annotated_image': annotated_image,
-                    # LLM illegal trade analysis
                     'llm_analysis': llm_result,
                     'risk_analysis': {
                         'risk_score': risk_score,
@@ -1039,20 +1405,63 @@ async def stream_reddit_collection(
                     }
                 }
                 
-                # Skip posts with NONE risk (below 25%) - not relevant
-                if risk_level == 'NONE':
-                    stats['total'] -= 1  # Don't count skipped posts
-                    stats['none_risk'] -= 1
-                    continue
-                
-                # Send post event
-                yield {
-                    "event": "post",
-                    "data": _json.dumps(post_data)
+                return {
+                    'post_data': post_data,
+                    'risk_level': risk_level,
+                    'did_image_analysis': did_image_analysis,
+                    'weapons_found': weapons_found,
+                    'did_llm_analysis': did_llm_analysis,
+                    'is_illegal': is_illegal
                 }
-                
-                # Small delay between posts for smooth UI updates
-                await asyncio.sleep(0.1)
+        
+        try:
+            # Create analysis tasks for all posts
+            tasks = [
+                asyncio.create_task(analyze_single_post(post, idx + 1))
+                for idx, post in enumerate(all_posts)
+            ]
+            
+            # Process results as they complete (faster posts come first)
+            for completed_task in asyncio.as_completed(tasks):
+                try:
+                    result = await completed_task
+                    
+                    # Update stats
+                    stats['total_scanned'] += 1
+                    risk_level = result['risk_level']
+                    
+                    if risk_level == 'HIGH' or risk_level == 'CRITICAL':
+                        stats['high_risk'] += 1
+                    elif risk_level == 'MEDIUM':
+                        stats['medium_risk'] += 1
+                    elif risk_level == 'LOW':
+                        stats['low_risk'] += 1
+                    else:
+                        stats['none_risk'] += 1
+                    
+                    if result['did_image_analysis']:
+                        stats['images_analyzed'] += 1
+                    if result['weapons_found']:
+                        stats['weapons_detected'] += 1
+                    if result['did_llm_analysis']:
+                        stats['llm_analyzed'] += 1
+                    if result['is_illegal']:
+                        stats['illegal_trade_detected'] += 1
+                    
+                    # Skip posts with NONE risk (below 25%)
+                    if risk_level == 'NONE':
+                        continue
+                    
+                    stats['total'] += 1
+                    
+                    # Send post event
+                    yield {
+                        "event": "post",
+                        "data": _json.dumps(result['post_data'])
+                    }
+                    
+                except Exception as task_err:
+                    log_print(f"⚠️ Task error: {task_err}")
             
         except Exception as e:
             log_print(f"❌ Collection error: {e}")

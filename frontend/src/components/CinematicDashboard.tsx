@@ -20,6 +20,19 @@ interface CollectedPost {
     detected_keywords: string[];
     detected_patterns: string[];
   };
+  llm_analysis?: {
+    is_weapon_related: boolean;
+    is_trade_related: boolean;
+    is_potentially_illegal: boolean;
+    illegality_reason?: string | null;
+    weapon_types_mentioned: string[];
+    trade_indicators: string[];
+    risk_assessment: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
+    confidence: number;
+    summary: string;
+    recommendation: 'INVESTIGATE' | 'FLAG' | 'MONITOR' | 'IGNORE' | 'RETRY';
+    processing_time_ms: number;
+  };
 }
 
 interface CollectionResult {
@@ -491,8 +504,8 @@ const CinematicDashboard: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={styles.logo}>🎯</div>
           <div>
-            <h1 style={styles.mainTitle}>TACTICAL DETECTION GRID</h1>
-            <p style={styles.subtitle}>WEAPONS TRADE DETECTION SYSTEM • ACADEMIC RESEARCH</p>
+            <h1 style={styles.mainTitle}>WEAPONS TRADE DETECTION SYSTEM </h1>
+            <p style={styles.subtitle}>ACADEMIC RESEARCH</p>
           </div>
         </div>
         
@@ -1298,6 +1311,128 @@ const CinematicDashboard: React.FC = () => {
                   }}>
                     {selectedCollectedPost.content || 'No content available'}
                   </div>
+
+                  {/* LLM Analysis - Illegal Trade Detection */}
+                  {selectedCollectedPost.llm_analysis && (
+                    <div style={{
+                      marginBottom: '15px',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: `1px solid ${selectedCollectedPost.llm_analysis.is_potentially_illegal ? '#ff0000' : '#00ffff'}`,
+                      background: selectedCollectedPost.llm_analysis.is_potentially_illegal 
+                        ? 'rgba(255, 0, 0, 0.1)' 
+                        : 'rgba(0, 255, 255, 0.05)',
+                    }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        marginBottom: '10px',
+                        fontWeight: 600,
+                        color: selectedCollectedPost.llm_analysis.is_potentially_illegal ? '#ff0000' : '#00ffff'
+                      }}>
+                        <span style={{ fontSize: '18px' }}>
+                          {selectedCollectedPost.llm_analysis.is_potentially_illegal ? '🚨' : '🧠'}
+                        </span>
+                        {selectedCollectedPost.llm_analysis.is_potentially_illegal 
+                          ? 'POTENTIAL ILLEGAL TRADE DETECTED' 
+                          : 'LLM ANALYSIS'}
+                      </div>
+                      
+                      <div style={{ 
+                        fontSize: '13px', 
+                        color: '#ccc', 
+                        marginBottom: '10px',
+                        lineHeight: 1.5 
+                      }}>
+                        {selectedCollectedPost.llm_analysis.summary}
+                      </div>
+
+                      {selectedCollectedPost.llm_analysis.is_potentially_illegal && selectedCollectedPost.llm_analysis.illegality_reason && (
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#ff6666', 
+                          marginBottom: '10px',
+                          padding: '8px',
+                          background: 'rgba(255,0,0,0.1)',
+                          borderRadius: '4px'
+                        }}>
+                          <strong>⚠️ Reason:</strong> {selectedCollectedPost.llm_analysis.illegality_reason}
+                        </div>
+                      )}
+
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(2, 1fr)', 
+                        gap: '8px',
+                        fontSize: '11px'
+                      }}>
+                        <div>
+                          <span style={{ color: '#888' }}>Weapon Related: </span>
+                          <span style={{ color: selectedCollectedPost.llm_analysis.is_weapon_related ? '#ff0080' : '#00ff88' }}>
+                            {selectedCollectedPost.llm_analysis.is_weapon_related ? 'YES' : 'NO'}
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ color: '#888' }}>Trade Related: </span>
+                          <span style={{ color: selectedCollectedPost.llm_analysis.is_trade_related ? '#ffaa00' : '#00ff88' }}>
+                            {selectedCollectedPost.llm_analysis.is_trade_related ? 'YES' : 'NO'}
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ color: '#888' }}>Risk: </span>
+                          <span style={{ 
+                            color: selectedCollectedPost.llm_analysis.risk_assessment === 'CRITICAL' ? '#ff0000' :
+                                   selectedCollectedPost.llm_analysis.risk_assessment === 'HIGH' ? '#ff0080' :
+                                   selectedCollectedPost.llm_analysis.risk_assessment === 'MEDIUM' ? '#ffaa00' : '#00ff88'
+                          }}>
+                            {selectedCollectedPost.llm_analysis.risk_assessment}
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ color: '#888' }}>Action: </span>
+                          <span style={{ 
+                            color: selectedCollectedPost.llm_analysis.recommendation === 'INVESTIGATE' ? '#ff0000' :
+                                   selectedCollectedPost.llm_analysis.recommendation === 'FLAG' ? '#ffaa00' : '#888'
+                          }}>
+                            {selectedCollectedPost.llm_analysis.recommendation}
+                          </span>
+                        </div>
+                      </div>
+
+                      {selectedCollectedPost.llm_analysis.weapon_types_mentioned?.length > 0 && (
+                        <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          <span style={{ color: '#888', fontSize: '11px' }}>Weapons: </span>
+                          {selectedCollectedPost.llm_analysis.weapon_types_mentioned.map((w, i) => (
+                            <span key={i} style={{
+                              fontSize: '10px',
+                              padding: '2px 6px',
+                              background: 'rgba(255, 0, 128, 0.2)',
+                              border: '1px solid #ff0080',
+                              borderRadius: '3px',
+                              color: '#ff0080'
+                            }}>{w}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      {selectedCollectedPost.llm_analysis.trade_indicators?.length > 0 && (
+                        <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          <span style={{ color: '#888', fontSize: '11px' }}>Trade Indicators: </span>
+                          {selectedCollectedPost.llm_analysis.trade_indicators.map((t, i) => (
+                            <span key={i} style={{
+                              fontSize: '10px',
+                              padding: '2px 6px',
+                              background: 'rgba(255, 170, 0, 0.2)',
+                              border: '1px solid #ffaa00',
+                              borderRadius: '3px',
+                              color: '#ffaa00'
+                            }}>{t}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Detected Flags */}
                   {selectedCollectedPost.risk_analysis?.flags && selectedCollectedPost.risk_analysis.flags.length > 0 && (

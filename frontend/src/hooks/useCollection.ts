@@ -99,6 +99,13 @@ export function useCollection() {
   const handleError = useCallback((error: any) => {
     console.error('Collection error:', error);
     stopCollection();
+    setPhase('idle');
+  }, [stopCollection]);
+
+  const handleDisconnect = useCallback(() => {
+    // Clean up collection state when SSE connection is closed (e.g., navigation away)
+    stopCollection();
+    setPhase('idle');
   }, [stopCollection]);
 
   const { connect, disconnect, isLoading, error } = useSSE({
@@ -107,6 +114,7 @@ export function useCollection() {
     onError: handleError,
     onStart: handleStart,
     onPhase: handlePhase,
+    onDisconnect: handleDisconnect,
   });
 
   const startRedditCollection = useCallback((subreddits: string[], limit: number = 10) => {

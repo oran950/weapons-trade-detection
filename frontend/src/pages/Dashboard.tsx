@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { useCollection } from '../hooks/useCollection';
+import { useBackgroundJob } from '../hooks/useBackgroundJob';
 import StatCard from '../components/shared/StatCard';
 import LiveStream from '../components/Detection/LiveStream';
 import CollectButton from '../components/Collection/CollectButton';
@@ -10,7 +10,39 @@ import type { Post } from '../context/AppContext';
 
 const Dashboard: React.FC = () => {
   const { stats, backendOnline, redditConfigured, telegramConfigured, ollamaAvailable } = useAppContext();
-  const { isCollecting, startRedditCollection, startTelegramCollection, cancelCollection, summary, progress, phase, phaseMessage } = useCollection();
+  
+  // Use background job for persistent collection (survives page refresh)
+  const { currentJob, isRunning, startJob, cancelJob, checkForActiveJob, posts: jobPosts } = useBackgroundJob();
+  
+  // Alias for consistency
+  const isCollecting = isRunning;
+  
+  // Progress derived from job
+  const progress = { current: currentJob?.progress || 0, total: currentJob?.total || 0 };
+  const phase = currentJob?.status === 'collecting' ? 'collecting' : 
+                currentJob?.status === 'analyzing' ? 'analyzing' : 'idle';
+  const phaseMessage = currentJob?.phase_message || '';
+  const summary = currentJob?.summary;
+  
+  // Check for active job on mount (for page refresh reconnection)
+  useEffect(() => {
+    checkForActiveJob();
+  }, [checkForActiveJob]);
+  
+  // Start Reddit collection using background job
+  const startRedditCollection = async (sources: string[], limit: number) => {
+    await startJob(sources, limit, true, true);
+  };
+  
+  // Start Telegram collection (placeholder)
+  const startTelegramCollection = async (sources: string[], limit: number) => {
+    console.log('Telegram collection not yet implemented for background jobs');
+  };
+  
+  // Cancel collection
+  const cancelCollection = () => {
+    cancelJob();
+  };
   const [showAnalyzeModal, setShowAnalyzeModal] = useState(false);
   const [analyzeText, setAnalyzeText] = useState('');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -106,31 +138,36 @@ const Dashboard: React.FC = () => {
             }}>
               <h3 style={{
                 ...styles.cardTitle,
-                color: phase === 'analyzing' ? '#00ffff' : '#ffaa00',
+                color: (phase === 'analyzing' || currentJob?.status === 'analyzing') ? '#00ffff' : '#ffaa00',
               }}>
-                {phase === 'collecting' && '📥 COLLECTING...'}
-                {phase === 'analyzing' && '🧠 ANALYZING WITH AI...'}
-                {phase === 'idle' && '⏳ STARTING...'}
+                {(phase === 'collecting' || currentJob?.status === 'collecting') && '📥 COLLECTING...'}
+                {(phase === 'analyzing' || currentJob?.status === 'analyzing') && '🧠 ANALYZING WITH AI...'}
+                {phase === 'idle' && !currentJob && '⏳ STARTING...'}
+                {currentJob?.status === 'pending' && '⏳ STARTING...'}
               </h3>
-              <div style={styles.phaseMessage}>{phaseMessage}</div>
+              <div style={styles.phaseMessage}>
+                {currentJob?.phase_message || phaseMessage}
+                {isRunning && <span style={{ marginLeft: '10px', fontSize: '11px', opacity: 0.7 }}>
+                </span>}
+              </div>
               <ProgressBar
-                current={progress.current}
-                total={progress.total}
-                label={phase === 'analyzing' ? 'Analyzing' : 'Collecting'}
-                color={phase === 'analyzing' ? '#00ffff' : '#ffaa00'}
+                current={currentJob?.progress || progress.current}
+                total={currentJob?.total || progress.total}
+                label={(phase === 'analyzing' || currentJob?.status === 'analyzing') ? 'Analyzing' : 'Collecting'}
+                color={(phase === 'analyzing' || currentJob?.status === 'analyzing') ? '#00ffff' : '#ffaa00'}
                 animated
               />
             </div>
           )}
 
           {/* Collection Summary - Shows after collection completes */}
-          {summary && !isCollecting && (
+          {((summary && !isCollecting) || currentJob?.status === 'completed') && (
             <div style={styles.summaryCard}>
               <h3 style={styles.summaryTitle}>📊 COLLECTION COMPLETE</h3>
               <div style={styles.summaryStats}>
                 <div style={styles.summaryRow}>
                   <span style={styles.summaryLabel}>Total Scanned:</span>
-                  <span style={styles.summaryValue}>{summary.total_scanned || 0}</span>
+                  <span style={styles.summaryValue}>{currentJob?.summary?.total_collected || summary?.total_scanned || 0}</span>
                 </div>
                 <div style={styles.summaryDivider} />
                 <div style={styles.summaryRow}>

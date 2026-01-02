@@ -50,6 +50,7 @@ class ImageAnalysisResult:
     processing_time_ms: int
     model_used: str
     annotated_image_base64: Optional[str] = None  # Base64 encoded annotated image
+    analysis_completed: bool = True  # False if timeout/error occurred
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -231,7 +232,8 @@ Be thorough but avoid false positives. Common false positives to avoid:
                 risk_score=0.0,
                 analysis_notes=f"Vision analysis timed out after {self.timeout}s",
                 processing_time_ms=processing_time,
-                model_used=self.vision_model
+                model_used=self.vision_model,
+                analysis_completed=False  # Timeout - don't mark as verified
             )
         except httpx.ConnectError as e:
             processing_time = int((datetime.now() - start_time).total_seconds() * 1000)
@@ -246,7 +248,8 @@ Be thorough but avoid false positives. Common false positives to avoid:
                 risk_score=0.0,
                 analysis_notes=f"Connection error: Ollama unreachable",
                 processing_time_ms=processing_time,
-                model_used=self.vision_model
+                model_used=self.vision_model,
+                analysis_completed=False  # Error - don't mark as verified
             )
         except Exception as e:
             processing_time = int((datetime.now() - start_time).total_seconds() * 1000)
@@ -261,7 +264,8 @@ Be thorough but avoid false positives. Common false positives to avoid:
                 risk_score=0.0,
                 analysis_notes=f"Analysis failed: {str(e)}",
                 processing_time_ms=processing_time,
-                model_used=self.vision_model
+                model_used=self.vision_model,
+                analysis_completed=False  # Error - don't mark as verified
             )
         
         # Parse LLM response
@@ -309,6 +313,8 @@ Be thorough but avoid false positives. Common false positives to avoid:
         risk_assessment = "LOW"
         notes = ""
         
+        print(f"   🔍 Parsing LLaVA response ({len(response)} chars)...", flush=True)
+        
         try:
             # Try to extract JSON from response
             json_match = response.strip()
@@ -320,6 +326,11 @@ Be thorough but avoid false positives. Common false positives to avoid:
                 json_str = json_match[start:end]
                 data = json.loads(json_str)
                 
+                # Log parsed JSON summary
+                contains = data.get('contains_weapons', False)
+                weapons_list = data.get('weapons_detected', [])
+                print(f"   📋 Parsed: contains_weapons={contains}, weapons_count={len(weapons_list)}", flush=True)
+                
                 risk_assessment = data.get('risk_assessment', 'LOW')
                 notes = data.get('notes', '')
                 context = data.get('context', '')
@@ -327,17 +338,29 @@ Be thorough but avoid false positives. Common false positives to avoid:
                 if context:
                     notes = f"{context}. {notes}"
                 
-                weapons = data.get('weapons_detected', [])
-                for weapon in weapons:
+                # If contains_weapons is true but list is empty, create generic detection
+                if contains and len(weapons_list) == 0:
+                    print(f"   ⚠️ Model says contains_weapons=true but no list - creating generic detection", flush=True)
+                    detections.append(WeaponDetection(
+                        weapon_type='weapon',
+                        confidence=0.7,
+                        description=context or 'Weapon detected in image',
+                        location_hint='unknown',
+                        risk_level='MEDIUM'
+                    ))
+                    risk_assessment = 'MEDIUM'
+                
+                # Parse weapons from list
+                for weapon in weapons_list:
                     confidence = float(weapon.get('confidence', 0.5))
-                    weapon_type = weapon.get('type', 'unknown')
+                    weapon_type = weapon.get('type', 'unknown').lower()
                     
                     # Determine risk level based on weapon type and confidence
-                    if weapon_type in ['rifle', 'shotgun', 'explosive', 'assault']:
+                    if weapon_type in ['rifle', 'shotgun', 'explosive', 'assault', 'ar-15', 'ak-47']:
                         weapon_risk = 'HIGH'
-                    elif weapon_type in ['handgun', 'pistol']:
+                    elif weapon_type in ['handgun', 'pistol', 'gun', 'firearm', 'revolver']:
                         weapon_risk = 'HIGH' if confidence > 0.7 else 'MEDIUM'
-                    elif weapon_type in ['knife', 'blade']:
+                    elif weapon_type in ['knife', 'blade', 'machete', 'sword']:
                         weapon_risk = 'MEDIUM'
                     else:
                         weapon_risk = 'MEDIUM' if confidence > 0.5 else 'LOW'
@@ -349,11 +372,29 @@ Be thorough but avoid false positives. Common false positives to avoid:
                         location_hint=weapon.get('location', 'unknown'),
                         risk_level=weapon_risk
                     ))
+                    print(f"   ✅ Detected: {weapon_type} ({confidence:.0%} confidence)", flush=True)
+            else:
+                # No JSON found - try to detect weapons from plain text
+                print(f"   ⚠️ No JSON in response, checking text...", flush=True)
+                response_lower = response.lower()
+                if any(w in response_lower for w in ['gun', 'pistol', 'rifle', 'firearm', 'weapon', 'handgun', 'glock', 'revolver']):
+                    print(f"   🔫 Weapon keywords found in non-JSON response", flush=True)
+                    detections.append(WeaponDetection(
+                        weapon_type='firearm',
+                        confidence=0.6,
+                        description='Weapon mentioned in analysis',
+                        location_hint='unknown',
+                        risk_level='MEDIUM'
+                    ))
+                    risk_assessment = 'MEDIUM'
+                    notes = response[:200]
                     
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             notes = f"Could not parse response: {response[:200]}"
+            print(f"   ❌ JSON parse error: {e}", flush=True)
         except Exception as e:
             notes = f"Parse error: {str(e)}"
+            print(f"   ❌ Parse error: {e}", flush=True)
         
         return detections, risk_assessment, notes
     

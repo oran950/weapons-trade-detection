@@ -12,6 +12,7 @@ interface UseSSEOptions {
   onError?: (error: any) => void;
   onInfo?: (data: any) => void;
   onPhase?: (data: any) => void;  // New: phase change event (collecting -> analyzing)
+  onDisconnect?: () => void;      // Called when connection is closed (for cleanup)
 }
 
 interface UseSSEReturn {
@@ -38,6 +39,10 @@ export function useSSE(options: UseSSEOptions = {}): UseSSEReturn {
       eventSourceRef.current = null;
       setIsConnected(false);
       setIsLoading(false);
+      // Notify parent that connection was closed (for cleanup)
+      if (optionsRef.current.onDisconnect) {
+        optionsRef.current.onDisconnect();
+      }
     }
   }, []);
 
