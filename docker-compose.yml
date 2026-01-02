@@ -45,6 +45,7 @@ services:
       - REACT_APP_API_URL=http://localhost:9000
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - HOST=0.0.0.0
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
