@@ -14,7 +14,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - OLLAMA_BASE=http://ollama:11434
-      - OLLAMA_MODEL=llama3.1:8b
+      - OLLAMA_MODEL=llama3.2:3b
       - OLLAMA_VISION_MODEL=llava:7b
     env_file:
       - ./backend/.env
@@ -87,8 +87,7 @@ services:
     command:
       - |
         echo "🔄 Pulling LLM models..."
-        ollama pull llama3.1:8b
-        ollama pull llava:7b
+        ollama pull llama3.2:3b
         echo "✅ Models ready!"
     restart: "no"
 

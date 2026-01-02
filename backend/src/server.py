@@ -343,7 +343,7 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
                 image_analyzer = ImageAnalysisHandler(
                     ollama_base=AppConfig.ollama.BASE,
                     vision_model=AppConfig.ollama.VISION_MODEL,
-                    timeout=180
+                    timeout=180  # Allow 3 minutes for CPU-based vision
                 )
             except ImportError:
                 pass
@@ -354,8 +354,9 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
                 llm_analyzer_inst = LLMTextAnalyzer(
                     ollama_base=AppConfig.ollama.BASE,
                     model=AppConfig.ollama.MODEL,
-                    timeout=180
+                    timeout=90  # Reduced timeout for faster 3b model
                 )
+                log_print(f"📝 LLM initialized: model={AppConfig.ollama.MODEL}")
             except ImportError:
                 pass
         
@@ -402,11 +403,10 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
                     except Exception as e:
                         log_print(f"⚠️ Job {job_id}: LLM error: {e}")
                 
-                # Image analysis (skip for now - too slow, causing timeouts)
-                # TODO: Re-enable when vision model is faster or use async queue
+                # Image analysis (enabled with 60s timeout)
                 image_analysis_result = None
                 annotated_image = None
-                if False and image_analyzer and post.image_url and not post.is_video:
+                if image_analyzer and post.image_url and not post.is_video:
                     try:
                         image_result = await image_analyzer.analyze_image(post.image_url)
                         if image_result.contains_weapons:
@@ -435,12 +435,8 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
                         log_print(f"⚠️ Job {job_id}: Image error: {e}")
                         image_analysis_result = {'error': str(e), 'contains_weapons': False}
                 
-                # Update progress
-                analyzed_count[0] += 1
-                job_store.update_job(job_id, progress=analyzed_count[0], 
-                                    phase_message=f"Analyzed {analyzed_count[0]}/{len(posts_to_analyze)} posts (parallel)")
-                
-                return {
+                # Build post data
+                post_data = {
                     'id': post.id,
                     'title': post.title,
                     'content': post.content[:500] if post.content else '',
@@ -470,16 +466,19 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
                         'detected_patterns': analysis.get('detected_patterns', [])
                     }
                 }
+                
+                # Add post IMMEDIATELY as it completes (don't wait for others)
+                job_store.add_post(job_id, post_data)
+                analyzed_count[0] += 1
+                job_store.update_job(job_id, progress=analyzed_count[0], 
+                                    phase_message=f"Analyzed {analyzed_count[0]}/{len(posts_to_analyze)} posts")
+                
+                return post_data
         
         # Run all analyses in parallel (limited by semaphore)
         tasks = [analyze_single_post(post, analysis, risk_score) 
                  for post, analysis, risk_score in posts_to_analyze]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Add successful results to job
-        for result in results:
-            if result and not isinstance(result, Exception):
-                job_store.add_post(job_id, result)
+        await asyncio.gather(*tasks, return_exceptions=True)
         
         # Complete the job
         job = job_store.get_job(job_id)

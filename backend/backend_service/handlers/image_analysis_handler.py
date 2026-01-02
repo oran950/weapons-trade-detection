@@ -189,6 +189,30 @@ Be thorough but avoid false positives. Common false positives to avoid:
                 model_used=self.vision_model
             )
         
+        # Resize image if too large (speeds up LLaVA significantly)
+        if PIL_AVAILABLE and len(image_data) > 500000:  # If > 500KB
+            try:
+                img = Image.open(BytesIO(image_data))
+                # Resize to max 800x800 while keeping aspect ratio
+                max_size = 800
+                if img.width > max_size or img.height > max_size:
+                    ratio = min(max_size / img.width, max_size / img.height)
+                    new_size = (int(img.width * ratio), int(img.height * ratio))
+                    img = img.resize(new_size, Image.Resampling.LANCZOS)
+                    print(f"   📐 Resized image: {new_size[0]}x{new_size[1]}", flush=True)
+                
+                # Convert to RGB if needed and compress
+                if img.mode in ('RGBA', 'P'):
+                    img = img.convert('RGB')
+                
+                # Save as JPEG with quality 85
+                buffer = BytesIO()
+                img.save(buffer, format='JPEG', quality=85, optimize=True)
+                image_data = buffer.getvalue()
+                print(f"   📦 Compressed: {len(image_data)//1000}KB", flush=True)
+            except Exception as e:
+                print(f"   ⚠️ Image resize failed, using original: {e}", flush=True)
+        
         # Encode image to base64
         image_base64 = base64.b64encode(image_data).decode('utf-8')
         print(f"   📤 Sending to LLaVA: {len(image_base64)//1000}KB, model={self.vision_model}", flush=True)
