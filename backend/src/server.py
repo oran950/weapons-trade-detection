@@ -4,7 +4,6 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 import threading
 # Log file path
 LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'server.log')
@@ -44,7 +43,7 @@ sys.path.insert(0, backend_dir)  # For imports from backend root (config, genera
 
 # Standard library imports
 from datetime import datetime  # noqa: E402
-from typing import Dict, List, Any, Tuple as _Tuple  # noqa: E402
+from typing import Dict, List, Any, Optional, Tuple as _Tuple  # noqa: E402
 import json as _json  # noqa: E402
 import re as _re  # noqa: E402
 import asyncio  # noqa: E402
@@ -223,6 +222,65 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+async def _ollama_list_models() -> _Tuple[List[str], Optional[str]]:
+    """Return (installed_model_names, error_message). error_message set if unreachable."""
+    import httpx as _httpx
+
+    base = (AppConfig.ollama.BASE or "").rstrip("/")
+    if not base:
+        return [], "OLLAMA_BASE is empty"
+    try:
+        async with _httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(f"{base}/api/tags")
+            if response.status_code != 200:
+                return [], f"Ollama at {base} returned HTTP {response.status_code}"
+            data = response.json()
+            names = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
+            return names, None
+    except Exception as e:
+        return [], f"Cannot reach Ollama at {base}: {e}"
+
+
+def _ollama_has_model(model_names: List[str], want: str) -> bool:
+    if not want or not model_names:
+        return False
+    want_l = want.lower()
+    for m in model_names:
+        ml = m.lower()
+        if want_l == ml or want_l in ml or ml in want_l:
+            return True
+    return False
+
+
+async def _require_ollama_if_mandatory(*, llm: bool, vision: bool) -> None:
+    """Raise HTTP 503 when OLLAMA_MANDATORY and Ollama or required models are unavailable."""
+    if not AppConfig.ollama.MANDATORY:
+        return
+    names, err = await _ollama_list_models()
+    if err:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Ollama is required (OLLAMA_MANDATORY=true) but unavailable: {err}",
+        )
+    if llm and not _ollama_has_model(names, AppConfig.ollama.MODEL):
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Ollama is required but text model '{AppConfig.ollama.MODEL}' is not available. "
+                f"Installed: {names}. Example: ollama pull {AppConfig.ollama.MODEL}"
+            ),
+        )
+    if vision and not _ollama_has_model(names, AppConfig.ollama.VISION_MODEL):
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Ollama is required for vision but model '{AppConfig.ollama.VISION_MODEL}' is not available. "
+                f"Installed: {names}. Example: ollama pull {AppConfig.ollama.VISION_MODEL}"
+            ),
+        )
+
+
 # =============================================================================
 # JOB API ENDPOINTS - For persistent background collection jobs
 # =============================================================================
@@ -300,8 +358,167 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
     try:
         log_print(f"🚀 Background job {job_id} started: {platform} - {sources}")
         job_store.update_job(job_id, status=JobStatus.COLLECTING, phase_message="Collecting posts...")
-        
-        # Import handlers
+
+        if platform == "telegram":
+            tg = AppConfig.telegram
+            if not tg.user_api_credentials_ok():
+                raise RuntimeError(
+                    "Telegram API not configured: " + ", ".join(tg.get_missing_user_api_config())
+                )
+            if not tg.has_session_file():
+                searched = ", ".join(str(p) for p in tg.session_file_candidates())
+                raise RuntimeError(
+                    f"No Telegram session file found. Checked: {searched}. "
+                    "Run: python scripts/telegram_auth.py (from backend/) or set TELEGRAM_SESSION_DIR."
+                )
+
+            from telethon import TelegramClient
+            from backend_service.telegram_stream_analysis import (
+                analyze_telegram_item,
+                collect_telegram_items,
+                telegram_session_arg_from_config,
+            )
+
+            client = TelegramClient(
+                telegram_session_arg_from_config(tg),
+                tg.API_ID,
+                tg.API_HASH,
+            )
+            await client.connect()
+            if not await client.is_user_authorized():
+                await client.disconnect()
+                raise RuntimeError("Telegram session not authorized. Run: python scripts/telegram_auth.py")
+
+            try:
+                all_items = await collect_telegram_items(client, sources, limit, log_print)
+                log_print(f"📥 Job {job_id}: Collected {len(all_items)} Telegram messages")
+                if not all_items:
+                    job_store.update_job(
+                        job_id,
+                        status=JobStatus.COMPLETED,
+                        phase_message="No Telegram messages collected.",
+                        summary={
+                            "total_collected": 0,
+                            "high_risk_count": 0,
+                            "medium_risk_count": 0,
+                            "low_risk_count": 0,
+                            "sources": sources,
+                            "hint": "No messages from the given channels. Check usernames are public, "
+                            "remove @ from URLs, or try t.me/username links. Verify login: python scripts/telegram_auth.py",
+                            "timestamp": datetime.now().isoformat(),
+                        },
+                    )
+                    log_print(f"⚠️ Job {job_id}: 0 Telegram messages — check channels and session")
+                    return
+
+                job_store.update_job(
+                    job_id,
+                    status=JobStatus.ANALYZING,
+                    phase_message="Analyzing messages with AI...",
+                    total=max(1, len(all_items)),
+                )
+
+                image_analyzer = None
+                llm_analyzer_inst = None
+                if analyze_images:
+                    try:
+                        from backend_service.handlers.image_analysis_handler import ImageAnalysisHandler
+                        image_analyzer = ImageAnalysisHandler(
+                            ollama_base=AppConfig.ollama.BASE,
+                            vision_model=AppConfig.ollama.VISION_MODEL,
+                            timeout=180,
+                        )
+                    except ImportError:
+                        pass
+                if llm_analysis:
+                    try:
+                        from backend_service.handlers.llm_text_analyzer import LLMTextAnalyzer
+                        llm_analyzer_inst = LLMTextAnalyzer(
+                            ollama_base=AppConfig.ollama.BASE,
+                            model=AppConfig.ollama.MODEL,
+                            timeout=120,
+                        )
+                    except ImportError:
+                        pass
+
+                vision_available = (
+                    await image_analyzer.check_model_available() if image_analyzer else False
+                )
+                llm_available = (
+                    await llm_analyzer_inst.check_model_available() if llm_analyzer_inst else False
+                )
+
+                # Analyze every collected message (matches Telegram SSE: full pass, then UI may filter).
+                # Reddit jobs still pre-filter at 0.25; Telegram channels are often news text below that
+                # until LLM runs, so pre-filtering here produced empty jobs and no Telegram in the UI.
+                posts_to_analyze: List[Dict[str, Any]] = []
+                for item in all_items:
+                    if job_store.get_job(job_id).status == JobStatus.CANCELLED:
+                        log_print(f"❌ Job {job_id} cancelled during collection")
+                        return
+                    posts_to_analyze.append(item)
+
+                log_print(
+                    f"📊 Job {job_id}: queued {len(posts_to_analyze)} Telegram messages for AI analysis"
+                )
+                job_store.update_job(job_id, total=max(1, len(posts_to_analyze)))
+
+                analyzed_count = [0]
+                for i, item in enumerate(posts_to_analyze):
+                    if job_store.get_job(job_id).status == JobStatus.CANCELLED:
+                        log_print(f"❌ Job {job_id} cancelled during Telegram analysis")
+                        return
+                    try:
+                        result = await analyze_telegram_item(
+                            analyzer=analyzer,
+                            item=item,
+                            client=client,
+                            image_analyzer=image_analyzer,
+                            llm_analyzer=llm_analyzer_inst,
+                            vision_available=vision_available,
+                            llm_available=llm_available,
+                            analyze_images=analyze_images,
+                            llm_analysis=llm_analysis,
+                            idx=i + 1,
+                            total=len(posts_to_analyze),
+                            log_print=log_print,
+                        )
+                        job_store.add_post(job_id, result["post_data"])
+                        analyzed_count[0] += 1
+                        job_store.update_job(
+                            job_id,
+                            progress=analyzed_count[0],
+                            phase_message=f"Analyzed {analyzed_count[0]}/{len(posts_to_analyze)} messages",
+                        )
+                    except Exception as msg_err:
+                        log_print(f"❌ Job {job_id} Telegram message analysis failed: {msg_err}")
+
+                job = job_store.get_job(job_id)
+                summary = {
+                    "total_collected": len(job.posts),
+                    "high_risk_count": sum(
+                        1
+                        for p in job.posts
+                        if p.get("risk_analysis", {}).get("risk_level") in ("HIGH", "CRITICAL")
+                    ),
+                    "medium_risk_count": sum(
+                        1 for p in job.posts if p.get("risk_analysis", {}).get("risk_level") == "MEDIUM"
+                    ),
+                    "low_risk_count": sum(
+                        1 for p in job.posts if p.get("risk_analysis", {}).get("risk_level") == "LOW"
+                    ),
+                    "sources": sources,
+                    "timestamp": datetime.now().isoformat(),
+                }
+                job_store.update_job(
+                    job_id, status=JobStatus.COMPLETED, summary=summary, phase_message="Complete!"
+                )
+                log_print(f"✅ Job {job_id} completed: {len(job.posts)} Telegram messages analyzed")
+            finally:
+                await client.disconnect()
+            return
+
+        # --- Reddit ---
         from backend_service.handlers.reddit_handler import RedditHandler
         
         handler = RedditHandler(
@@ -501,18 +718,53 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
 @app.post("/api/jobs/start")
 async def start_collection_job(request: StartJobRequest):
     """Start a background collection job that persists across page navigation"""
+    if request.platform not in ("reddit", "telegram"):
+        d = "platform must be 'reddit' or 'telegram'"
+        log_print(f"❌ POST /api/jobs/start 400: {d} (got platform={request.platform!r})")
+        raise HTTPException(status_code=400, detail=d)
+    if request.platform == "reddit" and not AppConfig.reddit.is_configured():
+        d = "Reddit API not configured: " + ", ".join(AppConfig.reddit.get_missing_config())
+        log_print(f"❌ POST /api/jobs/start 400: {d}")
+        raise HTTPException(status_code=400, detail=d)
+    if request.platform == "telegram":
+        tg = AppConfig.telegram
+        if not tg.user_api_credentials_ok():
+            d = "Telegram user API not configured: " + ", ".join(tg.get_missing_user_api_config())
+            log_print(f"❌ POST /api/jobs/start 400: {d}")
+            raise HTTPException(status_code=400, detail=d)
+        if not tg.has_session_file():
+            searched = ", ".join(str(p) for p in tg.session_file_candidates())
+            d = (
+                f"No Telegram session file found. Checked: {searched}. "
+                "Run: cd backend && python scripts/telegram_auth.py "
+                "(or set TELEGRAM_SESSION_DIR to the folder that contains your .session file)."
+            )
+            log_print(f"❌ POST /api/jobs/start 400: {d}")
+            raise HTTPException(status_code=400, detail=d)
+
+    sources = list(request.sources)
+    if request.platform == "telegram":
+        from backend_service.telegram_stream_analysis import normalize_telegram_sources
+
+        sources = normalize_telegram_sources(sources)
+        if not sources:
+            d = "No valid Telegram channel usernames. Use public @channel names or t.me/channel links."
+            log_print(f"❌ POST /api/jobs/start 400: {d} (raw sources={request.sources!r})")
+            raise HTTPException(status_code=400, detail=d)
+
     # Check if there's already an active job
     active = job_store.get_active_job()
     if active:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"A job is already running (ID: {active.id}). Cancel it first or wait for completion."
-        )
+        d = f"A job is already running (ID: {active.id}). Cancel it first or wait for completion."
+        log_print(f"❌ POST /api/jobs/start 400: {d}")
+        raise HTTPException(status_code=400, detail=d)
+
+    await _require_ollama_if_mandatory(llm=request.llm_analysis, vision=request.analyze_images)
     
     # Create the job
     job = job_store.create_job(
         platform=request.platform,
-        sources=request.sources,
+        sources=sources,
         limit=request.limit
     )
     
@@ -520,7 +772,7 @@ async def start_collection_job(request: StartJobRequest):
     asyncio.create_task(run_background_collection(
         job_id=job.id,
         platform=request.platform,
-        sources=request.sources,
+        sources=sources,
         limit=request.limit,
         analyze_images=request.analyze_images,
         llm_analysis=request.llm_analysis
@@ -582,11 +834,11 @@ async def root():
 @app.get("/health")
 async def health_check():
     logger.debug("🏥 Health check requested")
-    telegram_configured = bool(os.getenv('TELEGRAM_BOT_TOKEN'))
+    telegram_configured = AppConfig.telegram.is_configured()
     
     # Check Ollama availability
-    ollama_available = False
-    ollama_models = []
+    ollama_models: List[str] = []
+    ollama_reachable = False
     try:
         import httpx
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -594,28 +846,40 @@ async def health_check():
             if response.status_code == 200:
                 models_data = response.json()
                 ollama_models = [m['name'] for m in models_data.get('models', [])]
-                # Check if required models are available
-                has_vision = any('llava' in m for m in ollama_models)
-                has_llm = any('llama' in m for m in ollama_models)
-                ollama_available = has_vision or has_llm
-                logger.debug(f"✅ Ollama available: vision={has_vision}, llm={has_llm}, models={ollama_models}")
+                ollama_reachable = True
+                logger.debug(f"✅ Ollama reachable, models={ollama_models}")
             else:
                 logger.warning(f"⚠️ Ollama returned status {response.status_code}")
     except httpx.ConnectError as e:
         logger.warning(f"⚠️ Cannot connect to Ollama at {AppConfig.ollama.BASE}: {e}")
     except Exception as e:
         logger.warning(f"⚠️ Ollama check failed: {type(e).__name__}: {e}")
-    
+
+    text_model_ok = _ollama_has_model(ollama_models, AppConfig.ollama.MODEL) if ollama_reachable else False
+    vision_model_ok = _ollama_has_model(ollama_models, AppConfig.ollama.VISION_MODEL) if ollama_reachable else False
+    has_llm = any('llama' in m.lower() for m in ollama_models)
+    has_vision = any('llava' in m.lower() for m in ollama_models)
+    ollama_available = ollama_reachable and (has_vision or has_llm)
+    mandatory = AppConfig.ollama.MANDATORY
+    pipeline_ok = ollama_reachable and text_model_ok
+    if mandatory and not pipeline_ok:
+        overall = "degraded"
+    else:
+        overall = "OK"
+
     return {
-        "status": "OK",
+        "status": overall,
         "service": "Weapons Detection API",
         "version": "2.2.0",
         "timestamp": datetime.now().isoformat(),
         "python_version": "3.13",
         "reddit_configured": AppConfig.reddit.is_configured(),
         "telegram_configured": telegram_configured,
+        "ollama_mandatory": mandatory,
         "ollama_available": ollama_available,
-        "ollama_models": ollama_models
+        "ollama_text_model_ready": text_model_ok,
+        "ollama_vision_model_ready": vision_model_ok,
+        "ollama_models": ollama_models,
     }
 
 @app.get("/api")
@@ -1109,6 +1373,8 @@ async def stream_reddit_collection(
     subreddit_list = [s.strip() for s in subreddits.split(',') if s.strip()]
     if not subreddit_list:
         raise HTTPException(status_code=400, detail="No subreddits specified")
+
+    await _require_ollama_if_mandatory(llm=llm_analysis, vision=analyze_images)
     
     # Use RedditHandler which has enhanced image extraction via from_praw_submission
     from backend_service.handlers.reddit_handler import RedditHandler
@@ -1516,271 +1782,350 @@ async def stream_reddit_collection(
 @app.get("/api/stream/telegram")
 async def stream_telegram_collection(
     channels: str = _Query(..., description="Comma-separated list of channels/groups"),
-    limit: int = _Query(default=50, ge=1, le=200, description="Messages per channel")
+    limit: int = _Query(default=50, ge=1, le=200, description="Messages per channel"),
+    analyze_images: bool = _Query(default=True, description="Analyze photos with LLaVA when applicable"),
+    llm_analysis: bool = _Query(default=True, description="Use LLM for illegal trade analysis"),
 ):
     """
-    Stream Telegram messages as they are collected and analyzed using Server-Sent Events.
-    Uses Telethon (User API) to scrape public channels directly.
-    Requires TELEGRAM_API_ID and TELEGRAM_API_HASH to be configured.
-    Run 'python scripts/telegram_auth.py' first to authenticate.
+    Stream Telegram messages (collect then analyze) with the same SSE shape as Reddit.
+    Requires TELEGRAM_API_ID, TELEGRAM_API_HASH, and an authorized session file.
     """
     if not SSE_AVAILABLE:
         raise HTTPException(
             status_code=500,
             detail="SSE streaming not available. Install sse-starlette package."
         )
-    
-    # Check for Telegram User API credentials
-    api_id = os.getenv('TELEGRAM_API_ID')
-    api_hash = os.getenv('TELEGRAM_API_HASH')
-    session_name = os.getenv('TELEGRAM_SESSION_NAME', 'weapons_detection_session')
-    
-    if not api_id or not api_hash:
+
+    tg = AppConfig.telegram
+    if not tg.user_api_credentials_ok():
         raise HTTPException(
             status_code=400,
-            detail="Telegram API not configured. Add TELEGRAM_API_ID and TELEGRAM_API_HASH to .env file. "
-                   "Get credentials from https://my.telegram.org"
+            detail="Telegram API not configured. Missing: "
+            + ", ".join(tg.get_missing_user_api_config())
+            + ". Get credentials from https://my.telegram.org",
         )
-    
-    channel_list = [c.strip().lstrip('@') for c in channels.split(',') if c.strip()]
-    
+
+    from backend_service.telegram_stream_analysis import normalize_telegram_sources
+
+    channel_list = normalize_telegram_sources(channels.split(","))
+    if not channel_list:
+        raise HTTPException(status_code=400, detail="No channels specified")
+
+    await _require_ollama_if_mandatory(llm=llm_analysis, vision=analyze_images)
+
+    log_print(
+        f"📡 Telegram SSE: channels={channel_list}, limit={limit}, images={analyze_images}, llm={llm_analysis}"
+    )
+
     async def event_generator():
-        """Generate SSE events for Telegram messages from public channels"""
+        from backend_service.telegram_stream_analysis import (
+            analyze_telegram_item,
+            collect_telegram_items,
+            telegram_session_arg_from_config,
+        )
+
         stats = {
-            'total': 0,
-            'high_risk': 0,
-            'medium_risk': 0,
-            'low_risk': 0
+            "total_scanned": 0,
+            "total": 0,
+            "high_risk": 0,
+            "medium_risk": 0,
+            "low_risk": 0,
+            "none_risk": 0,
+            "weapons_detected": 0,
+            "images_analyzed": 0,
+            "illegal_trade_detected": 0,
+            "llm_analyzed": 0,
         }
-        
-        # Send start event
-        yield {
-            "event": "start",
-            "data": _json.dumps({
-                "channels": channel_list,
-                "limit": limit,
-                "timestamp": datetime.now().isoformat(),
-                "method": "telethon_user_api"
-            })
-        }
-        
+        vision_available = False
+        llm_available = False
         client = None
+
         try:
             from telethon import TelegramClient
-            from telethon.errors import ChannelPrivateError, UsernameNotOccupiedError
-            
-            # Create client
-            client = TelegramClient(session_name, int(api_id), api_hash)
+        except ImportError:
+            yield {
+                "event": "error",
+                "data": _json.dumps(
+                    {"message": "Telethon not installed. Run: pip install telethon", "fatal": True}
+                ),
+            }
+            return
+
+        try:
+            session_arg = telegram_session_arg_from_config(tg)
+            client = TelegramClient(session_arg, tg.API_ID, tg.API_HASH)
             await client.connect()
-            
-            # Check if authenticated
             if not await client.is_user_authorized():
                 yield {
                     "event": "error",
-                    "data": _json.dumps({
-                        "message": "Not authenticated. Run 'python scripts/telegram_auth.py' to authenticate first.",
-                        "configured": False,
-                        "action_required": "Run authentication script"
-                    })
+                    "data": _json.dumps(
+                        {
+                            "message": "Not authenticated. Run: python scripts/telegram_auth.py",
+                            "configured": False,
+                            "fatal": True,
+                        }
+                    ),
                 }
                 return
-            
-            # Get user info
+
             me = await client.get_me()
             yield {
                 "event": "info",
-                "data": _json.dumps({
-                    "message": f"Connected as: {me.first_name} (@{me.username})",
-                    "configured": True,
-                    "method": "user_api"
-                })
+                "data": _json.dumps(
+                    {
+                        "message": f"Connected as: {me.first_name} (@{me.username})",
+                        "configured": True,
+                        "method": "user_api",
+                    }
+                ),
             }
-            
-            await asyncio.sleep(0.1)
-            
-            # Iterate through each channel
-            for channel_username in channel_list:
+
+            all_items = await collect_telegram_items(client, channel_list, limit, log_print)
+            log_print(f"📊 Telegram collected {len(all_items)} messages (pre-analysis)")
+
+            image_analyzer = None
+            if analyze_images:
                 try:
-                    yield {
-                        "event": "info",
-                        "data": _json.dumps({
-                            "message": f"Collecting from @{channel_username}...",
-                            "channel": channel_username
-                        })
-                    }
-                    
-                    # Get channel entity
-                    try:
-                        channel = await client.get_entity(channel_username)
-                        channel_title = getattr(channel, 'title', channel_username)
-                    except UsernameNotOccupiedError:
-                        yield {
-                            "event": "info",
-                            "data": _json.dumps({
-                                "message": f"Channel @{channel_username} not found, skipping...",
-                                "channel": channel_username,
-                                "error": "not_found"
-                            })
-                        }
-                        continue
-                    except ChannelPrivateError:
-                        yield {
-                            "event": "info",
-                            "data": _json.dumps({
-                                "message": f"Channel @{channel_username} is private, skipping...",
-                                "channel": channel_username,
-                                "error": "private"
-                            })
-                        }
-                        continue
-                    
-                    # Collect messages
-                    msg_count = 0
-                    async for message in client.iter_messages(channel, limit=limit):
-                        if not message.text:
-                            continue
-                        
-                        msg_count += 1
-                        
-                        # Analyze message
-                        analysis = analyzer.analyze_text(message.text)
-                        
-                        # Determine risk level
-                        if analysis['risk_score'] >= 0.7:
-                            risk_level = 'HIGH'
-                            stats['high_risk'] += 1
-                        elif analysis['risk_score'] >= 0.4:
-                            risk_level = 'MEDIUM'
-                            stats['medium_risk'] += 1
-                        else:
-                            risk_level = 'LOW'
-                            stats['low_risk'] += 1
-                        
-                        stats['total'] += 1
-                        
-                        # Hash sender for privacy
-                        sender_id = str(message.sender_id) if message.sender_id else "anonymous"
-                        from backend_service.utils.hashing import hash_username
-                        author_hash = hash_username(sender_id)
-                        
-                        # Build post data
-                        post_data = {
-                            'id': f"tg-{channel_username}-{message.id}",
-                            'title': message.text[:100] + "..." if len(message.text) > 100 else message.text,
-                            'content': message.text[:500],
-                            'author_hash': author_hash,
-                            'platform': 'telegram',
-                            'subreddit': f"@{channel_username}",  # Use subreddit field for channel
-                            'chat_title': channel_title,
-                            'chat_type': 'channel',
-                            'url': f"https://t.me/{channel_username}/{message.id}",
-                            'created_at': message.date.timestamp() if message.date else None,
-                            'collected_at': datetime.now().isoformat(),
-                            'views': getattr(message, 'views', None),
-                            'forwards': getattr(message, 'forwards', None),
-                            'risk_analysis': {
-                                'risk_score': analysis['risk_score'],
-                                'risk_level': risk_level,
-                                'confidence': analysis['confidence'],
-                                'keywords_found': analysis.get('keywords_found', []),
-                                'categories': analysis.get('categories', [])
-                            }
-                        }
-                        
-                        yield {
-                            "event": "post",
-                            "data": _json.dumps(post_data)
-                        }
-                        
-                        # Small delay to avoid rate limits
-                        await asyncio.sleep(0.05)
-                    
-                    yield {
-                        "event": "info",
-                        "data": _json.dumps({
-                            "message": f"Collected {msg_count} messages from @{channel_username}",
-                            "channel": channel_username,
-                            "count": msg_count
-                        })
-                    }
-                    
-                    # Delay between channels
-                    await asyncio.sleep(0.5)
-                    
-                except Exception as e:
-                    yield {
-                        "event": "info",
-                        "data": _json.dumps({
-                            "message": f"Error collecting from @{channel_username}: {str(e)}",
-                            "channel": channel_username,
-                            "error": str(e)
-                        })
-                    }
-                    continue
-            
-        except ImportError:
-            logger.error("❌ Telethon not installed")
+                    from backend_service.handlers.image_analysis_handler import ImageAnalysisHandler
+
+                    image_analyzer = ImageAnalysisHandler(
+                        ollama_base=AppConfig.ollama.BASE,
+                        vision_model=AppConfig.ollama.VISION_MODEL,
+                        timeout=180,
+                    )
+                except ImportError:
+                    log_print("⚠️ Image analysis handler not available")
+
+            llm_analyzer = None
+            if llm_analysis:
+                try:
+                    from backend_service.handlers.llm_text_analyzer import LLMTextAnalyzer
+
+                    llm_analyzer = LLMTextAnalyzer(
+                        ollama_base=AppConfig.ollama.BASE,
+                        model=AppConfig.ollama.MODEL,
+                        timeout=180,
+                    )
+                except ImportError:
+                    log_print("⚠️ LLM text analyzer not available")
+
+            if image_analyzer:
+                vision_available = await image_analyzer.check_model_available()
+            if llm_analyzer:
+                llm_available = await llm_analyzer.check_model_available()
+
             yield {
-                "event": "error",
-                "data": _json.dumps({
-                    "message": "Telethon not installed. Run: pip install telethon",
-                    "configured": False
-                })
+                "event": "start",
+                "data": _json.dumps(
+                    {
+                        "phase": "collecting",
+                        "channels": channel_list,
+                        "subreddits": [],
+                        "limit": limit,
+                        "total_posts": len(all_items),
+                        "analyze_images": analyze_images and vision_available,
+                        "vision_model": image_analyzer.vision_model if image_analyzer else None,
+                        "llm_analysis": llm_analysis and llm_available,
+                        "llm_model": llm_analyzer.model if llm_analyzer else None,
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
             }
+
+            yield {
+                "event": "phase",
+                "data": _json.dumps(
+                    {
+                        "phase": "analyzing",
+                        "message": f"📊 Collected {len(all_items)} messages. Now analyzing with AI...",
+                        "total_to_analyze": len(all_items),
+                        "vision_enabled": vision_available,
+                        "llm_enabled": llm_available,
+                    }
+                ),
+            }
+
+            if analyze_images:
+                if vision_available:
+                    yield {
+                        "event": "info",
+                        "data": _json.dumps(
+                            {
+                                "message": f"🔍 Vision analysis enabled using {image_analyzer.vision_model}",
+                                "type": "vision_enabled",
+                            }
+                        ),
+                    }
+                else:
+                    yield {
+                        "event": "info",
+                        "data": _json.dumps(
+                            {
+                                "message": "⚠️ Vision model not available. Run: ollama pull llava:7b",
+                                "type": "vision_unavailable",
+                            }
+                        ),
+                    }
+
+            if llm_analysis:
+                if llm_available:
+                    yield {
+                        "event": "info",
+                        "data": _json.dumps(
+                            {
+                                "message": f"🧠 LLM analysis enabled using {llm_analyzer.model}",
+                                "type": "llm_enabled",
+                            }
+                        ),
+                    }
+                else:
+                    yield {
+                        "event": "info",
+                        "data": _json.dumps(
+                            {
+                                "message": "⚠️ LLM model not available. Run: ollama pull llama3.1:8b",
+                                "type": "llm_unavailable",
+                            }
+                        ),
+                    }
+
+            analysis_semaphore = asyncio.Semaphore(3)
+
+            async def analyze_one(item: Dict[str, Any], idx: int):
+                async with analysis_semaphore:
+                    return await analyze_telegram_item(
+                        analyzer=analyzer,
+                        item=item,
+                        client=client,
+                        image_analyzer=image_analyzer,
+                        llm_analyzer=llm_analyzer,
+                        vision_available=vision_available,
+                        llm_available=llm_available,
+                        analyze_images=analyze_images,
+                        llm_analysis=llm_analysis,
+                        idx=idx,
+                        total=len(all_items),
+                        log_print=log_print,
+                    )
+
+            tasks = [
+                asyncio.create_task(analyze_one(item, i + 1)) for i, item in enumerate(all_items)
+            ]
+
+            for completed_task in asyncio.as_completed(tasks):
+                try:
+                    result = await completed_task
+                    stats["total_scanned"] += 1
+                    risk_level = result["risk_level"]
+                    if risk_level in ("HIGH", "CRITICAL"):
+                        stats["high_risk"] += 1
+                    elif risk_level == "MEDIUM":
+                        stats["medium_risk"] += 1
+                    elif risk_level == "LOW":
+                        stats["low_risk"] += 1
+                    else:
+                        stats["none_risk"] += 1
+
+                    if result["did_image_analysis"]:
+                        stats["images_analyzed"] += 1
+                    if result["weapons_found"]:
+                        stats["weapons_detected"] += 1
+                    if result["did_llm_analysis"]:
+                        stats["llm_analyzed"] += 1
+                    if result["is_illegal"]:
+                        stats["illegal_trade_detected"] += 1
+
+                    if risk_level == "NONE":
+                        continue
+
+                    stats["total"] += 1
+                    yield {
+                        "event": "post",
+                        "data": _json.dumps(result["post_data"]),
+                    }
+                except Exception as task_err:
+                    log_print(f"⚠️ Telegram task error: {task_err}")
+
         except Exception as e:
+            log_print(f"❌ Telegram collection error: {e}")
             yield {
                 "event": "error",
-                "data": _json.dumps({
-                    "message": f"Collection error: {str(e)}",
-                    "configured": True
-                })
+                "data": _json.dumps({"message": str(e), "fatal": True}),
             }
         finally:
             if client:
                 await client.disconnect()
-        
-        # Send completion event
+
+        log_print(
+            f"✅ Telegram complete: {stats['total_scanned']} scanned, {stats['high_risk']} HIGH, "
+            f"{stats['medium_risk']} MEDIUM, {stats['low_risk']} LOW, {stats['none_risk']} filtered"
+        )
         yield {
             "event": "complete",
-            "data": _json.dumps({
-                "total_collected": stats['total'],
-                "high_risk_count": stats['high_risk'],
-                "medium_risk_count": stats['medium_risk'],
-                "low_risk_count": stats['low_risk'],
-                "channels_collected": channel_list,
-                "timestamp": datetime.now().isoformat()
-            })
+            "data": _json.dumps(
+                {
+                    "total_scanned": stats["total_scanned"],
+                    "total_collected": stats["total"],
+                    "high_risk_count": stats["high_risk"],
+                    "medium_risk_count": stats["medium_risk"],
+                    "low_risk_count": stats["low_risk"],
+                    "filtered_out": stats["none_risk"],
+                    "images_analyzed": stats["images_analyzed"],
+                    "weapons_detected": stats["weapons_detected"],
+                    "llm_analyzed": stats["llm_analyzed"],
+                    "illegal_trade_detected": stats["illegal_trade_detected"],
+                    "vision_enabled": vision_available,
+                    "llm_enabled": llm_available,
+                    "channels_collected": channel_list,
+                    "subreddits_collected": channel_list,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            ),
         }
-    
+
     return EventSourceResponse(event_generator())
 
 
 @app.get("/api/telegram/config-status")
 async def telegram_config_status():
-    """Check Telegram API configuration status"""
-    bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
-    
-    result = {
-        "is_configured": bool(bot_token),
-        "method": "bot_api" if bot_token else None,
-        "bot_token_set": bool(bot_token),
+    """Check Telegram API configuration status (user API + session + optional bot)."""
+    tg = AppConfig.telegram
+    missing_user = tg.get_missing_user_api_config()
+    resolved = tg.resolved_session_file()
+    session_path = str(resolved) if resolved else str(tg.session_path())
+    session_exists = tg.has_session_file()
+
+    result: Dict[str, Any] = {
+        "is_configured": tg.is_configured(),
+        "user_api_credentials_ok": tg.user_api_credentials_ok(),
+        "missing_user_api_config": missing_user,
+        "session_name": tg.SESSION_NAME,
+        "session_file_path": session_path,
+        "session_paths_checked": [str(p) for p in tg.session_file_candidates()],
+        "session_file_exists": session_exists,
+        "user_api_ready_for_collection": tg.user_api_credentials_ok() and session_exists,
+        "bot_token_set": bool(tg.BOT_TOKEN),
+        "method": (
+            "bot_api"
+            if tg.BOT_TOKEN and not tg.user_api_credentials_ok()
+            else ("user_api" if tg.user_api_credentials_ok() else None)
+        ),
     }
-    
-    # Verify bot if token is set
-    if bot_token:
+
+    if tg.BOT_TOKEN:
         try:
             from backend_service.handlers.telegram_bot_handler import TelegramBotHandler
-            handler = TelegramBotHandler(bot_token=bot_token)
+            handler = TelegramBotHandler(bot_token=tg.BOT_TOKEN)
             verification = handler.verify_token()
             result["bot_verified"] = verification.get('ok', False)
             result["bot_username"] = verification.get('bot_username')
             result["bot_name"] = verification.get('bot_name')
             if not verification.get('ok'):
-                result["error"] = verification.get('error')
+                result["bot_error"] = verification.get('error')
         except Exception as e:
             result["bot_verified"] = False
-            result["error"] = str(e)
-    
+            result["bot_error"] = str(e)
+
     return result
 
 
@@ -1968,16 +2313,17 @@ def _safe_json_parse(text: str) -> Dict[str, Any]:
         "misclassification_risk": "MEDIUM",
     }
 
-_LLM_PROMPT = """You are validating *suspected illegal weapons trade* in academic research text.
+_LLM_PROMPT = """You are a senior OSINT analyst validating suspected illegal weapons-trade text for an academic monitoring stack.
+You are precise, evidence-bound, and skeptical of sensationalism; you return machine-readable JSON only.
 
 Return STRICT JSON exactly with this schema (no prose, no backticks):
-{
+{{
   "final_label": "HIGH"|"MEDIUM"|"LOW",
   "risk_adjustment": <number between -1.0 and 1.0>,
   "reasons": ["short bullet 1", "short bullet 2"],
   "evidence_spans": ["verbatim span 1", "verbatim span 2"],
   "misclassification_risk": "LOW"|"MEDIUM"|"HIGH"
-}
+}}
 
 Constraints:
 - Do NOT invent evidence; spans must appear verbatim in the text.
@@ -1994,13 +2340,8 @@ KEYWORDS: {KEYWORDS}
 PATTERNS: {PATTERNS}
 CURRENT_RULE_RISK: {RULE_RISK}
 """
-''''
-1. Text comes in → Rule engine analyzes → Risk score: 0.6 (MEDIUM)
-2. If LLM enabled → Ollama reviews the text + rule results
-3. Ollama returns: "LOW risk - this is about airsoft, not real weapons"
-4. System combines: Rule score (0.6) + LLM adjustment (-0.3) = Final: 0.3 (LOW)
 
-'''
+
 def _ollama_classify(prompt: str) -> Dict[str, Any]:
     if _requests is None:
         raise RuntimeError("requests is not installed. Run: pip install requests")
@@ -2010,7 +2351,10 @@ def _ollama_classify(prompt: str) -> Dict[str, Any]:
         json={
             "model": _OLLAMA_MODEL,
             "messages": [
-                {"role": "system", "content": "You are a precise risk classifier that returns strict JSON only."},
+                {
+                    "role": "system",
+                    "content": "You are a senior OSINT analyst. You only output strict JSON for downstream parsers.",
+                },
                 {"role": "user", "content": prompt},
             ],
             "options": {"temperature": 0},
@@ -2133,6 +2477,7 @@ async def analyze_content_llm(
 
     # --- (2) Optional LLM stage ---
     if _llm_should_run(rule_risk, use_llm, always_if_toggled=always_if_toggled):
+        await _require_ollama_if_mandatory(llm=True, vision=False)
         try:
             llm = _llm_validate(
                 text=content,

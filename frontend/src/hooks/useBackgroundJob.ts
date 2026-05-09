@@ -14,7 +14,7 @@ interface JobStatus {
   phase_message: string;
   posts_count: number;
   summary: any;
-  error: string | null;
+  error?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -27,7 +27,13 @@ interface UseBackgroundJobReturn {
   error: string | null;
   
   // Actions
-  startJob: (sources: string[], limit?: number, analyzeImages?: boolean, llmAnalysis?: boolean) => Promise<string | null>;
+  startJob: (
+    platform: 'reddit' | 'telegram',
+    sources: string[],
+    limit?: number,
+    analyzeImages?: boolean,
+    llmAnalysis?: boolean
+  ) => Promise<string | null>;
   cancelJob: () => Promise<void>;
   checkForActiveJob: () => Promise<void>;
 }
@@ -64,6 +70,7 @@ export function useBackgroundJob(): UseBackgroundJobReturn {
             title: postData.title,
             content: postData.content,
             subreddit: postData.subreddit,
+            channel: postData.channel,
             author_hash: postData.author_hash,
             score: postData.score,
             num_comments: postData.num_comments,
@@ -131,7 +138,8 @@ export function useBackgroundJob(): UseBackgroundJobReturn {
         
         // Start polling for updates
         startPolling(data.job.id);
-        startCollection('reddit');
+        const plat = (data.job.platform as 'reddit' | 'telegram') || 'reddit';
+        startCollection(plat);
       }
     } catch (err) {
       console.error('Error checking for active job:', err);
@@ -140,6 +148,7 @@ export function useBackgroundJob(): UseBackgroundJobReturn {
 
   // Start a new job
   const startJob = useCallback(async (
+    platform: 'reddit' | 'telegram',
     sources: string[], 
     limit: number = 10,
     analyzeImages: boolean = true,
@@ -154,7 +163,7 @@ export function useBackgroundJob(): UseBackgroundJobReturn {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          platform: 'reddit',
+          platform,
           sources,
           limit,
           analyze_images: analyzeImages,
@@ -168,7 +177,7 @@ export function useBackgroundJob(): UseBackgroundJobReturn {
       }
       
       const data = await response.json();
-      startCollection('reddit');
+      startCollection(platform);
       
       // Start polling for the new job
       startPolling(data.job_id);

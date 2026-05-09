@@ -9,13 +9,20 @@ import sys
 import asyncio
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_BACKEND_ROOT))
 
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Same as backend/config.py: always load backend/.env (not cwd-dependent)
+load_dotenv(_BACKEND_ROOT / ".env", override=True)
+load_dotenv(override=False)
+
+
+def _session_file_base() -> Path:
+    """Path prefix Telethon uses (no .session suffix); always under backend/."""
+    name = os.getenv("TELEGRAM_SESSION_NAME", "weapons_detection_session").strip() or "weapons_detection_session"
+    return _BACKEND_ROOT / name
 
 
 async def authenticate():
@@ -24,8 +31,8 @@ async def authenticate():
     # Get credentials from environment
     api_id = os.getenv('TELEGRAM_API_ID')
     api_hash = os.getenv('TELEGRAM_API_HASH')
-    session_name = os.getenv('TELEGRAM_SESSION_NAME', 'weapons_detection_session')
-    
+    session_base = _session_file_base()
+
     if not api_id or not api_hash:
         print("=" * 60)
         print("TELEGRAM API CREDENTIALS NOT FOUND")
@@ -55,10 +62,10 @@ async def authenticate():
         from telethon.errors import SessionPasswordNeededError
         
         print(f"\nConnecting to Telegram...")
-        print(f"Session name: {session_name}")
+        print(f"Session file: {session_base}.session")
         
-        # Create client
-        client = TelegramClient(session_name, int(api_id), api_hash)
+        # Create client (absolute path so CWD does not matter)
+        client = TelegramClient(str(session_base), int(api_id), api_hash)
         
         # Connect and authenticate
         await client.connect()
@@ -79,7 +86,7 @@ async def authenticate():
         # Get user info
         me = await client.get_me()
         print(f"\n✓ Successfully authenticated as: {me.first_name} (@{me.username})")
-        print(f"✓ Session file created: {session_name}.session")
+        print(f"✓ Session file created: {session_base}.session")
         
         # Test by listing some dialogs
         print("\nTesting connection by listing your recent chats:")
@@ -108,8 +115,8 @@ async def test_channel_access(channel_username: str = "telegram"):
     
     api_id = os.getenv('TELEGRAM_API_ID')
     api_hash = os.getenv('TELEGRAM_API_HASH')
-    session_name = os.getenv('TELEGRAM_SESSION_NAME', 'weapons_detection_session')
-    
+    session_base = _session_file_base()
+
     if not api_id or not api_hash:
         print("API credentials not configured. Run authentication first.")
         return
@@ -117,7 +124,7 @@ async def test_channel_access(channel_username: str = "telegram"):
     try:
         from telethon import TelegramClient
         
-        client = TelegramClient(session_name, int(api_id), api_hash)
+        client = TelegramClient(str(session_base), int(api_id), api_hash)
         await client.connect()
         
         if not await client.is_user_authorized():

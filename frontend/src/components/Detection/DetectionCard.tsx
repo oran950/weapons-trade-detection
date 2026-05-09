@@ -25,12 +25,18 @@ const DetectionCard: React.FC<DetectionCardProps> = ({ post, onClick, compact = 
     return `${Math.floor(diff / 86400)}d ago`;
   };
 
-  const getBorderColor = () => {
-    if (isIllegalTrade) return '#ff0000';  // Red for illegal trade
+  const getBorderColor = (): string => {
+    if (isIllegalTrade) return '#ff0000';
     switch (riskLevel) {
-      case 'HIGH': return '#ff0080';
-      case 'MEDIUM': return '#ffaa00';
-      case 'LOW': return '#00ff88';
+      case 'HIGH':
+      case 'CRITICAL':
+        return '#ff0080';
+      case 'MEDIUM':
+        return '#ffaa00';
+      case 'LOW':
+      case 'NONE':
+      default:
+        return '#00ff88';
     }
   };
 
@@ -56,7 +62,9 @@ const DetectionCard: React.FC<DetectionCardProps> = ({ post, onClick, compact = 
             <RiskBadge level={riskLevel} size="small" />
           )}
           <span style={styles.platform}>
-            {post.platform === 'reddit' ? `r/${post.subreddit}` : post.channel}
+            {post.platform === 'reddit'
+              ? `r/${post.subreddit || '?'}`
+              : post.channel || post.subreddit || 'Telegram'}
           </span>
         </div>
         <div style={styles.compactTitle}>{post.title}</div>
@@ -95,7 +103,9 @@ const DetectionCard: React.FC<DetectionCardProps> = ({ post, onClick, compact = 
       </div>
 
       <div style={styles.source}>
-        {post.platform === 'reddit' ? `r/${post.subreddit}` : post.channel}
+        {post.platform === 'reddit'
+          ? `r/${post.subreddit || '?'}`
+          : post.channel || post.subreddit || 'Telegram'}
       </div>
 
       <h3 style={styles.title}>{post.title}</h3>

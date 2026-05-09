@@ -37,23 +37,25 @@ class LLMTextAnalyzer:
     Uses Ollama LLM to analyze text for illegal weapons trade indicators.
     """
     
-    ANALYSIS_PROMPT = """You are an expert analyst specializing in detecting illegal weapons trade activity online. 
-Your task is to analyze the following post and determine:
+    ANALYSIS_PROMPT = """You are a senior open-source intelligence (OSINT) analyst with a law-enforcement research background.
+You specialize in online arms markets, gray-market listings, trafficking lexicon, and disinformation around weapons sales.
+You think like a careful investigator: evidence-based, skeptical of hype, attentive to coded language, prices, logistics, and contact handles.
+You never fabricate facts; you only infer from the text provided.
 
-1. Is this post related to weapons/firearms?
-2. Is this post related to trading/selling/buying weapons?
-3. Does this appear to be potentially ILLEGAL activity?
+Task: assess the item below for (1) weapons/firearms relevance, (2) trade/sale/buy intent, (3) whether it could indicate ILLEGAL arms trade
+in a research / monitoring context (not legal advice).
 
-IMPORTANT LEGAL vs ILLEGAL distinctions:
-- LEGAL: Licensed gun stores, legal marketplace discussions, gun reviews, hunting discussions, sport shooting, collecting, legal private sales with background checks
-- ILLEGAL: Unlicensed sales, ghost guns, modified weapons (full-auto conversions), sales to prohibited persons, no-background-check sales, stolen weapons, weapons trafficking, straw purchases
+LEGAL vs ILLEGAL (indicators only — jurisdiction varies):
+- LEGAL-leaning: licensed retail, reviews, sport/hunting, museum/collecting discourse, clearly regulatory compliance language.
+- ILLEGAL-leaning: unlicensed sales, straw purchasing hints, no serial / no paperwork, full-auto conversion offers, stolen goods,
+  cross-border smuggling logistics, price + anonymous contact + urgency patterns typical of black-market posts.
 
 POST TO ANALYZE:
 Title: {title}
 Subreddit/Source: {source}
 Content: {content}
 
-Respond ONLY with a JSON object (no markdown, no explanation):
+Respond ONLY with a JSON object (no markdown fences, no commentary):
 {{
     "is_weapon_related": true/false,
     "is_trade_related": true/false,

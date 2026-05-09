@@ -78,15 +78,21 @@ const defaultSources = {
     'ForgottenWeapons',      // Historic weapons
   ],
   telegram: [
-    'warmonitors',        // Conflict monitoring
-    'militaborat',        // Military operations
-    'ryaborig',           // Defense news (RU)
-    'militaryarmament',   // Military equipment
-    'ArmyRecognition',    // Defense industry
-    'defence_blog',       // Military tech
-    'conflictnews',       // Global conflicts
-    'warfakes',           // Conflict fact-check
-    'militaryweapons',    // Weapons systems
+    // High-traffic / smoke-test
+    'telegram',
+    'durov',
+    // Defense & conflict OSINT
+    'rybar',
+    'nexta_tv',
+    'warmonitors',
+    'ArmyRecognition',
+    'thedeaddistrict',
+    // Firearms, pistols & weapons-tracking (public channels — replace for your research scope)
+    'worldloveguns',
+    'kjguns',
+    'russianarms',
+    'uaweapons',
+    'defenceblog',
   ],
 };
 

@@ -8,11 +8,18 @@ interface LiveStreamProps {
   showHeader?: boolean;
 }
 
+type StreamFilter = 'all' | 'reddit' | 'telegram';
+
 const LiveStream: React.FC<LiveStreamProps> = ({ maxItems = 20, showHeader = true }) => {
   const { posts, isCollecting } = useAppContext();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [streamFilter, setStreamFilter] = useState<StreamFilter>('all');
 
-  const displayPosts = posts.slice(0, maxItems);
+  const filtered =
+    streamFilter === 'all'
+      ? posts
+      : posts.filter((p) => p.platform === streamFilter);
+  const displayPosts = filtered.slice(0, maxItems);
 
   return (
     <div style={styles.container}>
@@ -22,19 +29,36 @@ const LiveStream: React.FC<LiveStreamProps> = ({ maxItems = 20, showHeader = tru
             <span style={styles.icon}>📡</span>
             <h2 style={styles.title}>LIVE DETECTION STREAM</h2>
           </div>
-          <div style={{
-            ...styles.status,
-            background: isCollecting 
-              ? 'rgba(255,170,0,0.2)' 
-              : 'rgba(0,255,136,0.2)',
-            borderColor: isCollecting ? '#ffaa00' : '#00ff88',
-            color: isCollecting ? '#ffaa00' : '#00ff88',
-          }}>
-            <span style={{
-              ...styles.statusDot,
-              background: isCollecting ? '#ffaa00' : '#00ff88',
-            }}></span>
-            {isCollecting ? 'COLLECTING...' : 'ACTIVE'}
+          <div style={styles.headerRight}>
+            <div style={styles.filterRow}>
+              {(['all', 'reddit', 'telegram'] as const).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setStreamFilter(key)}
+                  style={{
+                    ...styles.filterBtn,
+                    ...(streamFilter === key ? styles.filterBtnActive : {}),
+                  }}
+                >
+                  {key === 'all' ? 'All' : key === 'reddit' ? 'Reddit' : 'Telegram'}
+                </button>
+              ))}
+            </div>
+            <div style={{
+              ...styles.status,
+              background: isCollecting 
+                ? 'rgba(255,170,0,0.2)' 
+                : 'rgba(0,255,136,0.2)',
+              borderColor: isCollecting ? '#ffaa00' : '#00ff88',
+              color: isCollecting ? '#ffaa00' : '#00ff88',
+            }}>
+              <span style={{
+                ...styles.statusDot,
+                background: isCollecting ? '#ffaa00' : '#00ff88',
+              }}></span>
+              {isCollecting ? 'COLLECTING...' : 'ACTIVE'}
+            </div>
           </div>
         </div>
       )}
@@ -43,7 +67,13 @@ const LiveStream: React.FC<LiveStreamProps> = ({ maxItems = 20, showHeader = tru
         {displayPosts.length === 0 ? (
           <div style={styles.empty}>
             <span style={styles.emptyIcon}>📭</span>
-            <p>No detections yet. Start collecting data to see results.</p>
+            <p>
+              {posts.length === 0
+                ? 'No detections yet. Start collecting data to see results.'
+                : streamFilter === 'all'
+                  ? 'No posts to show.'
+                  : `No ${streamFilter} posts in the stream yet. Try "All" or run a ${streamFilter} collection.`}
+            </p>
           </div>
         ) : (
           <div style={styles.stream}>
@@ -97,6 +127,33 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
+  },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap' as const,
+    justifyContent: 'flex-end',
+  },
+  filterRow: {
+    display: 'flex',
+    gap: '6px',
+  },
+  filterBtn: {
+    padding: '4px 10px',
+    fontSize: '10px',
+    fontWeight: 600,
+    letterSpacing: '0.5px',
+    border: '1px solid rgba(0,255,255,0.25)',
+    borderRadius: '6px',
+    background: 'rgba(0,0,0,0.25)',
+    color: '#888',
+    cursor: 'pointer',
+  },
+  filterBtnActive: {
+    borderColor: '#00ffff',
+    color: '#00ffff',
+    background: 'rgba(0,255,255,0.12)',
   },
   icon: {
     fontSize: '20px',
