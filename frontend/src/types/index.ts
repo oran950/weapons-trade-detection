@@ -19,6 +19,75 @@ export interface AnalysisResult {
   analysis_time: string;
 }
 
+/** Full response from POST /api/detection/analyze (Dashboard export). */
+export interface DetectionAnalyzeResponse {
+  analysis_id: string;
+  status: string;
+  risk_score: number;
+  risk_level: string;
+  confidence: number;
+  flags: string[];
+  detected_keywords: string[];
+  detected_patterns: string[];
+  summary: string;
+  timestamp: string;
+}
+
+export type OsintPdfReportType = 'collection_item' | 'text_analysis' | 'collection_digest';
+
+export interface OsintPdfCollectionPayload {
+  report_type: 'collection_item';
+  report_title?: string;
+  report_id?: string;
+  record_id?: string;
+  id?: string;
+  platform?: string;
+  title?: string;
+  content?: string;
+  source_url?: string;
+  url?: string;
+  author_hash?: string;
+  collected_at?: string;
+  channel?: string;
+  subreddit?: string;
+  risk_analysis?: Record<string, unknown>;
+  llm_analysis?: Record<string, unknown> | null;
+  image_analysis?: Record<string, unknown> | null;
+}
+
+export interface OsintPdfTextPayload {
+  report_type: 'text_analysis';
+  report_title?: string;
+  context_title?: string;
+  source_text: string;
+  analysis_id?: string;
+  risk_score: number;
+  risk_level: string;
+  confidence: number;
+  flags: string[];
+  detected_keywords: string[];
+  detected_patterns: string[];
+  summary: string;
+  timestamp?: string;
+  status?: string;
+}
+
+export interface OsintPdfDigestPayload {
+  report_type: 'collection_digest';
+  report_title?: string;
+  report_id?: string;
+  aggregate_stats: Record<string, unknown>;
+  sessions: Array<Record<string, unknown>>;
+  standalone_posts: Array<Record<string, unknown>>;
+  job_summary?: Record<string, unknown>;
+  job_meta?: Record<string, unknown>;
+}
+
+export type OsintPdfPayload =
+  | OsintPdfCollectionPayload
+  | OsintPdfTextPayload
+  | OsintPdfDigestPayload;
+
 // Weapon detection types
 export interface WeaponDetection {
   weapon_type: string;

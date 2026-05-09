@@ -21,6 +21,11 @@ services:
     volumes:
       - ./backend:/app
       - ./backend/server.log:/app/server.log
+    # Mount overwrites image /app but not site-packages — install deps on start so requirements.txt changes apply without rebuild
+    command: >
+      sh -c "set -e && pip install --no-cache-dir -r /app/requirements.txt
+      && pip install --no-cache-dir 'reportlab>=4.0.0'
+      && exec python -m uvicorn src.server:app --host 0.0.0.0 --port 9000"
     depends_on:
       ollama:
         condition: service_healthy

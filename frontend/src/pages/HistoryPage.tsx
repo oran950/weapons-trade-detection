@@ -2,11 +2,36 @@ import React, { useState } from 'react';
 import { useAppContext, CollectionSession, Post } from '../context/AppContext';
 import DetailModal from '../components/Detection/DetailModal';
 import RiskBadge from '../components/shared/RiskBadge';
+import { exportOsintPdf } from '../api';
+import { buildCollectionDigestPayload } from '../utils/collectionPdfPayload';
 
 const HistoryPage: React.FC = () => {
-  const { sessions, posts } = useAppContext();
+  const { sessions, posts, stats } = useAppContext();
   const [selectedSession, setSelectedSession] = useState<CollectionSession | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [digestLoading, setDigestLoading] = useState(false);
+  const [digestError, setDigestError] = useState<string | null>(null);
+
+  const canExportDigest = sessions.length > 0 || posts.length > 0;
+
+  const handleExportDigest = async () => {
+    if (!canExportDigest) return;
+    setDigestError(null);
+    setDigestLoading(true);
+    try {
+      const payload = buildCollectionDigestPayload({
+        sessions,
+        posts,
+        stats,
+        reportTitle: 'Collection history & workspace digest',
+      });
+      await exportOsintPdf(payload);
+    } catch (e) {
+      setDigestError(e instanceof Error ? e.message : 'PDF export failed');
+    } finally {
+      setDigestLoading(false);
+    }
+  };
 
   const formatDate = (timestamp: string) => {
     return new Date(timestamp).toLocaleString();
@@ -16,10 +41,29 @@ const HistoryPage: React.FC = () => {
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <h1 style={styles.title}>📜 Collection History</h1>
-        <p style={styles.subtitle}>
-          {sessions.length} collection sessions recorded
-        </p>
+        <div style={styles.headerTop}>
+          <div>
+            <h1 style={styles.title}>📜 Collection History</h1>
+            <p style={styles.subtitle}>
+              {sessions.length} collection sessions recorded
+            </p>
+          </div>
+          <button
+            type="button"
+            style={{
+              ...styles.exportDigestButton,
+              opacity: !canExportDigest || digestLoading ? 0.5 : 1,
+              cursor: !canExportDigest || digestLoading ? 'not-allowed' : 'pointer',
+            }}
+            disabled={!canExportDigest || digestLoading}
+            onClick={handleExportDigest}
+          >
+            {digestLoading ? 'EXPORTING…' : 'EXPORT ALL PDF'}
+          </button>
+        </div>
+        {digestError && (
+          <p style={{ color: '#ff6666', fontSize: '13px', marginTop: '8px' }}>{digestError}</p>
+        )}
       </div>
 
       {/* Content */}
@@ -167,6 +211,24 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   header: {
     marginBottom: '10px',
+  },
+  headerTop: {
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '16px',
+  },
+  exportDigestButton: {
+    padding: '12px 18px',
+    background: 'transparent',
+    border: '1px solid rgba(0,255,255,0.45)',
+    borderRadius: '8px',
+    fontSize: '12px',
+    fontWeight: 700,
+    color: '#00ffff',
+    letterSpacing: '1px',
+    whiteSpace: 'nowrap' as const,
   },
   title: {
     margin: 0,

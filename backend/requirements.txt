@@ -39,6 +39,9 @@ aiofiles>=23.2.1
 python-dateutil>=2.8.2
 python-slugify>=8.0.1
 
+# PDF reports (pure Python; Docker-friendly)
+reportlab>=4.0.0
+
 # Development
 pytest>=7.4.3
 black>=23.11.0

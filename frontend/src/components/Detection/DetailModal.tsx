@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Post } from '../../context/AppContext';
 import RiskBadge from '../shared/RiskBadge';
+import { exportOsintPdf } from '../../api';
+import type { OsintPdfCollectionPayload } from '../../types';
 
 interface DetailModalProps {
   post: Post;
@@ -8,8 +10,53 @@ interface DetailModalProps {
 }
 
 const DetailModal: React.FC<DetailModalProps> = ({ post, onClose }) => {
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
   const riskLevel = post.risk_analysis?.risk_level || 'LOW';
   const riskScore = post.risk_analysis?.risk_score || 0;
+
+  const handleExportPdf = async () => {
+    setPdfError(null);
+    setPdfLoading(true);
+    const payload: OsintPdfCollectionPayload = {
+      report_type: 'collection_item',
+      report_title: post.title || 'Collection artifact assessment',
+      report_id: post.id,
+      record_id: post.id,
+      id: post.id,
+      platform: post.platform,
+      title: post.title,
+      content: post.content,
+      source_url: post.url,
+      url: post.url,
+      author_hash: post.author_hash,
+      collected_at: post.collected_at,
+      channel: post.channel,
+      subreddit: post.subreddit,
+      risk_analysis: (post.risk_analysis || {
+        risk_score: riskScore,
+        risk_level: riskLevel,
+        confidence: 0,
+        flags: [] as string[],
+        detected_keywords: [] as string[],
+        detected_patterns: [] as string[],
+      }) as Record<string, unknown>,
+    };
+    if (post.llm_analysis) {
+      payload.llm_analysis = post.llm_analysis as unknown as Record<string, unknown>;
+    }
+    if (post.image_analysis) {
+      payload.image_analysis = post.image_analysis as unknown as Record<string, unknown>;
+    }
+    try {
+      await exportOsintPdf(payload);
+    } catch (e) {
+      setPdfError(e instanceof Error ? e.message : 'PDF export failed');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const getRiskColor = (): string => {
     switch (riskLevel) {
@@ -225,6 +272,10 @@ const DetailModal: React.FC<DetailModalProps> = ({ post, onClose }) => {
           </div>
         )}
 
+        {pdfError && (
+          <div style={{ color: '#ff6666', fontSize: '12px', marginTop: '16px' }}>{pdfError}</div>
+        )}
+
         {/* Actions */}
         <div style={styles.actions}>
           {post.url && (
@@ -237,7 +288,19 @@ const DetailModal: React.FC<DetailModalProps> = ({ post, onClose }) => {
               🔗 VIEW ORIGINAL SOURCE
             </a>
           )}
-          <button style={styles.secondaryButton} onClick={onClose}>
+          <button
+            type="button"
+            style={{
+              ...styles.secondaryButton,
+              opacity: pdfLoading ? 0.65 : 1,
+              cursor: pdfLoading ? 'not-allowed' : 'pointer',
+            }}
+            disabled={pdfLoading}
+            onClick={handleExportPdf}
+          >
+            {pdfLoading ? 'EXPORTING…' : 'EXPORT PDF'}
+          </button>
+          <button type="button" style={styles.secondaryButton} onClick={onClose}>
             CLOSE
           </button>
         </div>
@@ -421,6 +484,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   actions: {
     display: 'flex',
+    flexWrap: 'wrap' as const,
     gap: '15px',
     marginTop: '25px',
     paddingTop: '25px',

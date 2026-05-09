@@ -43,7 +43,7 @@ sys.path.insert(0, backend_dir)  # For imports from backend root (config, genera
 
 # Standard library imports
 from datetime import datetime  # noqa: E402
-from typing import Dict, List, Any, Optional, Tuple as _Tuple  # noqa: E402
+from typing import Dict, List, Any, Optional, Tuple as _Tuple, Literal  # noqa: E402
 import json as _json  # noqa: E402
 import re as _re  # noqa: E402
 import asyncio  # noqa: E402
@@ -52,7 +52,7 @@ from concurrent.futures import ThreadPoolExecutor  # noqa: E402
 # Third-party imports
 from fastapi import FastAPI, HTTPException, Query as _Query  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
-from fastapi.responses import StreamingResponse  # noqa: E402
+from fastapi.responses import StreamingResponse, Response  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 import requests as _requests  # noqa: E402
 import uvicorn  # noqa: E402
@@ -69,6 +69,7 @@ except ImportError:
 from detection.text_analyzer import WeaponsTextAnalyzer  # noqa: E402
 from config import AppConfig  # noqa: E402
 from generation.content_generator import SyntheticContentGenerator, ContentParameters  # noqa: E402
+from reports import build_osint_pdf  # noqa: E402 — lazy; reportlab loaded on first PDF only
 
 # --- ENV / Config (uses your existing AppConfig where convenient) ---
 _LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
@@ -213,13 +214,15 @@ app = FastAPI(
 analyzer = WeaponsTextAnalyzer()
 content_generator = SyntheticContentGenerator()
 
-# CORS middleware
+# CORS middleware (localhost + 127.0.0.1, any port — PDF/blob fetch fails closed if origin mismatches)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 
@@ -527,18 +530,19 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
             user_agent=AppConfig.reddit.USER_AGENT
         )
         
-        # Collect posts
+        # Collect posts (PRAW is synchronous — never call it on the asyncio event loop)
         all_posts = []
         for source in sources:
             if job_store.get_job(job_id).status == JobStatus.CANCELLED:
                 log_print(f"❌ Job {job_id} cancelled during collection")
                 return
             try:
-                posts = handler.collect_subreddit_posts(
-                    subreddit_name=source,
-                    time_filter="day",
-                    limit=limit,
-                    sort_method="hot"
+                posts = await asyncio.to_thread(
+                    handler.collect_subreddit_posts,
+                    source,
+                    "day",
+                    limit,
+                    "hot",
                 )
                 all_posts.extend(posts)
                 log_print(f"📥 Job {job_id}: Collected {len(posts)} from r/{source}")
@@ -816,6 +820,60 @@ class RedditCollectionParams(BaseModel):
 class RedditCollectionRequest(BaseModel):
     parameters: RedditCollectionParams
 
+
+class OsintPdfRequest(BaseModel):
+    """Payload for OSINT-style PDF export (single item, text analysis, or multi-session digest)."""
+    report_type: Literal["collection_item", "text_analysis", "collection_digest"]
+    report_title: Optional[str] = None
+    report_id: Optional[str] = None
+    record_id: Optional[str] = None
+    id: Optional[str] = None
+    platform: Optional[str] = None
+    title: Optional[str] = None
+    content: Optional[str] = None
+    source_url: Optional[str] = None
+    url: Optional[str] = None
+    author_hash: Optional[str] = None
+    collected_at: Optional[str] = None
+    channel: Optional[str] = None
+    subreddit: Optional[str] = None
+    risk_analysis: Optional[Dict[str, Any]] = None
+    llm_analysis: Optional[Dict[str, Any]] = None
+    image_analysis: Optional[Dict[str, Any]] = None
+    source_text: Optional[str] = None
+    context_title: Optional[str] = None
+    analysis_id: Optional[str] = None
+    risk_score: Optional[float] = None
+    risk_level: Optional[str] = None
+    confidence: Optional[float] = None
+    flags: Optional[List[str]] = None
+    detected_keywords: Optional[List[str]] = None
+    detected_patterns: Optional[List[str]] = None
+    summary: Optional[str] = None
+    timestamp: Optional[str] = None
+    status: Optional[str] = None
+    # collection_digest: consolidated History + Dashboard workspace
+    aggregate_stats: Optional[Dict[str, Any]] = None
+    sessions: Optional[List[Dict[str, Any]]] = None
+    standalone_posts: Optional[List[Dict[str, Any]]] = None
+    job_summary: Optional[Dict[str, Any]] = None
+    job_meta: Optional[Dict[str, Any]] = None
+
+
+def _osint_pdf_payload_char_estimate(obj: Any) -> int:
+    if obj is None:
+        return 0
+    if isinstance(obj, str):
+        return len(obj)
+    if isinstance(obj, (int, float, bool)):
+        return 0
+    if isinstance(obj, dict):
+        return sum(_osint_pdf_payload_char_estimate(v) for v in obj.values())
+    if isinstance(obj, list):
+        return sum(_osint_pdf_payload_char_estimate(v) for v in obj)
+    return len(str(obj))
+
+
 # Initialize Reddit collector
 def init_reddit_collector():
     """Initialize Reddit collector when needed"""
@@ -890,7 +948,8 @@ async def api_info():
             "/health", 
             "/api", 
             "/api/test", 
-            "/api/detection/analyze", 
+            "/api/detection/analyze",
+            "/api/reports/osint-pdf",
             "/api/generation/content",
             "/api/generation/batch",
             "/api/generation/big-data",
@@ -940,6 +999,83 @@ async def analyze_content(request: Dict[str, Any]):
         "summary": f"Analysis completed. Risk level: {risk_level}. Found {len(analysis_results['flags'])} potential indicators.",
         "timestamp": analysis_results['analysis_time']
     }
+
+
+@app.post("/api/reports/osint-pdf")
+async def export_osint_pdf(request: OsintPdfRequest):
+    """Generate a professional OSINT-style PDF report (academic research disclaimer)."""
+    data = request.model_dump(exclude_none=True)
+    rt = data.get("report_type")
+    if rt == "text_analysis":
+        if not (data.get("source_text") or "").strip():
+            raise HTTPException(status_code=400, detail="source_text is required for text_analysis reports")
+    elif rt == "collection_item":
+        if not (
+            (data.get("content") or "").strip()
+            or (data.get("title") or "").strip()
+            or data.get("risk_analysis")
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="collection_item reports require content, title, and/or risk_analysis",
+            )
+    elif rt == "collection_digest":
+        sessions = data.get("sessions") or []
+        stand = data.get("standalone_posts") or []
+        total_listed = sum(len(s.get("posts") or []) for s in sessions) + len(stand)
+        js = data.get("job_summary") or {}
+        has_job = bool(
+            js.get("total_collected")
+            or js.get("total_scanned")
+            or js.get("high_risk_count") is not None
+        )
+        if total_listed == 0 and len(sessions) == 0 and not has_job:
+            raise HTTPException(
+                status_code=400,
+                detail="No collection data to export. Collect posts or ensure history/sessions exist.",
+            )
+    else:
+        raise HTTPException(status_code=400, detail="Invalid report_type")
+
+    est = _osint_pdf_payload_char_estimate(data)
+    est_limit = 1_800_000 if rt == "collection_digest" else 200_000
+    if est > est_limit:
+        raise HTTPException(
+            status_code=413,
+            detail="Payload too large for PDF export; try a smaller scope or export single items.",
+        )
+
+    try:
+        pdf_bytes = build_osint_pdf(data)
+    except ModuleNotFoundError as e:
+        if "reportlab" in str(e).lower():
+            logger.error("PDF export missing dependency: %s", e)
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "PDF export requires 'reportlab'. In Docker: ensure the backend container runs "
+                    "'pip install -r requirements.txt' on start or rebuild the image. "
+                    "Locally: pip install -r backend/requirements.txt"
+                ),
+            ) from e
+        raise
+    except Exception as e:
+        logger.exception("OSINT PDF generation failed: %s", e)
+        raise HTTPException(status_code=500, detail="PDF generation failed") from e
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    if rt == "collection_digest":
+        filename = f"OSINT-Digest-{stamp}.pdf"
+    else:
+        rid = data.get("report_id") or data.get("analysis_id") or data.get("record_id") or data.get("id") or "report"
+        safe = _re.sub(r"[^\w\-.]+", "-", str(rid))[:48].strip("-") or "report"
+        filename = f"OSINT-Report-{safe}-{stamp}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
 
 # Content generation endpoints
 @app.post("/api/generation/content")
@@ -1385,15 +1521,16 @@ async def stream_reddit_collection(
         user_agent=AppConfig.reddit.USER_AGENT
     )
     
-    # Collect posts from each subreddit using the enhanced handler
+    # Collect posts from each subreddit (PRAW sync — off the event loop)
     all_posts = []
     for subreddit in subreddit_list:
         try:
-            posts = handler.collect_subreddit_posts(
-                subreddit_name=subreddit,
-                time_filter=time_filter,
-                limit=limit,
-                sort_method=sort_method
+            posts = await asyncio.to_thread(
+                handler.collect_subreddit_posts,
+                subreddit,
+                time_filter,
+                limit,
+                sort_method,
             )
             all_posts.extend(posts)
             log_print(f"📥 Collected {len(posts)} posts from r/{subreddit}")

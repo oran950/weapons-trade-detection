@@ -5,9 +5,19 @@ import StatCard from '../components/shared/StatCard';
 import LiveStream from '../components/Detection/LiveStream';
 import CollectButton from '../components/Collection/CollectButton';
 import ProgressBar from '../components/Collection/ProgressBar';
+import { exportOsintPdf } from '../api';
+import type { DetectionAnalyzeResponse } from '../types';
+import { buildCollectionDigestPayload } from '../utils/collectionPdfPayload';
 
 const Dashboard: React.FC = () => {
-  const { stats, redditConfigured, telegramConfigured, ollamaAvailable } = useAppContext();
+  const {
+    stats,
+    redditConfigured,
+    telegramConfigured,
+    ollamaAvailable,
+    posts,
+    sessions,
+  } = useAppContext();
   
   // Use background job for persistent collection (survives page refresh)
   const {
@@ -49,7 +59,16 @@ const Dashboard: React.FC = () => {
   };
   const [showAnalyzeModal, setShowAnalyzeModal] = useState(false);
   const [analyzeText, setAnalyzeText] = useState('');
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<DetectionAnalyzeResponse | null>(null);
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const [pdfExportError, setPdfExportError] = useState<string | null>(null);
+  const [digestLoading, setDigestLoading] = useState(false);
+  const [digestError, setDigestError] = useState<string | null>(null);
+
+  const canExportDigest =
+    posts.length > 0 ||
+    sessions.length > 0 ||
+    (currentJob?.status === 'completed' && !!currentJob?.summary);
 
   const handleAnalyze = async () => {
     if (!analyzeText.trim()) return;
@@ -61,9 +80,71 @@ const Dashboard: React.FC = () => {
         body: JSON.stringify({ content: analyzeText }),
       });
       const result = await response.json();
-      setAnalysisResult(result);
+      setAnalysisResult(result as DetectionAnalyzeResponse);
+      setPdfExportError(null);
     } catch (error) {
       console.error('Analysis failed:', error);
+    }
+  };
+
+  const handleExportAnalysisPdf = async () => {
+    if (!analysisResult || !analyzeText.trim()) return;
+    setPdfExportError(null);
+    setPdfExporting(true);
+    try {
+      await exportOsintPdf({
+        report_type: 'text_analysis',
+        context_title: 'Dashboard text analysis',
+        source_text: analyzeText,
+        analysis_id: analysisResult.analysis_id,
+        risk_score: analysisResult.risk_score,
+        risk_level: analysisResult.risk_level,
+        confidence: analysisResult.confidence,
+        flags: analysisResult.flags || [],
+        detected_keywords: analysisResult.detected_keywords || [],
+        detected_patterns: analysisResult.detected_patterns || [],
+        summary: analysisResult.summary,
+        timestamp: analysisResult.timestamp,
+        status: analysisResult.status,
+      });
+    } catch (e) {
+      setPdfExportError(e instanceof Error ? e.message : 'PDF export failed');
+    } finally {
+      setPdfExporting(false);
+    }
+  };
+
+  const handleExportDigest = async () => {
+    if (!canExportDigest) return;
+    setDigestError(null);
+    setDigestLoading(true);
+    try {
+      const jobSummary =
+        currentJob?.status === 'completed' && currentJob.summary
+          ? { ...(currentJob.summary as Record<string, unknown>) }
+          : null;
+      const jobMeta =
+        currentJob?.status === 'completed' && currentJob
+          ? {
+              id: currentJob.id,
+              platform: currentJob.platform,
+              sources: currentJob.sources,
+              status: currentJob.status,
+            }
+          : null;
+      const payload = buildCollectionDigestPayload({
+        sessions,
+        posts,
+        stats,
+        reportTitle: 'Dashboard workspace digest',
+        jobSummary,
+        jobMeta,
+      });
+      await exportOsintPdf(payload);
+    } catch (e) {
+      setDigestError(e instanceof Error ? e.message : 'PDF export failed');
+    } finally {
+      setDigestLoading(false);
     }
   };
 
@@ -89,12 +170,40 @@ const Dashboard: React.FC = () => {
         >
           🔍 ANALYZE TEXT
         </button>
+        <button
+          type="button"
+          style={{
+            ...styles.digestExportButton,
+            opacity: !canExportDigest || digestLoading ? 0.5 : 1,
+            cursor: !canExportDigest || digestLoading ? 'not-allowed' : 'pointer',
+          }}
+          disabled={!canExportDigest || digestLoading}
+          onClick={handleExportDigest}
+        >
+          {digestLoading ? 'EXPORTING…' : '📄 EXPORT ALL PDF'}
+        </button>
         {isCollecting && (
           <button style={styles.cancelButton} onClick={cancelCollection}>
             ✕ CANCEL
           </button>
         )}
       </div>
+
+      {digestError && (
+        <div
+          style={{
+            margin: '0 0 12px 0',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,80,80,0.5)',
+            background: 'rgba(80,0,0,0.35)',
+            color: '#ff9999',
+            fontSize: '13px',
+          }}
+        >
+          <strong>PDF export:</strong> {digestError}
+        </div>
+      )}
 
       {(jobHookError || (currentJob?.status === 'failed' && currentJob.error)) && (
         <div
@@ -349,6 +458,21 @@ const Dashboard: React.FC = () => {
                     ))}
                   </div>
                 )}
+                {pdfExportError && (
+                  <div style={{ color: '#ff6666', fontSize: '12px', marginTop: '10px' }}>{pdfExportError}</div>
+                )}
+                <button
+                  type="button"
+                  style={{
+                    ...styles.modalExportPdf,
+                    opacity: pdfExporting ? 0.65 : 1,
+                    cursor: pdfExporting ? 'not-allowed' : 'pointer',
+                  }}
+                  disabled={pdfExporting}
+                  onClick={handleExportAnalysisPdf}
+                >
+                  {pdfExporting ? 'EXPORTING PDF…' : 'EXPORT PDF REPORT'}
+                </button>
               </div>
             )}
           </div>
@@ -382,6 +506,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#00ffff',
     letterSpacing: '1px',
     cursor: 'pointer',
+    transition: 'all 0.3s ease',
+  },
+  digestExportButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '14px 20px',
+    background: 'rgba(0,255,255,0.06)',
+    border: '1px solid rgba(0,255,255,0.45)',
+    borderRadius: '8px',
+    fontSize: '12px',
+    fontWeight: 700,
+    color: '#00ffff',
+    letterSpacing: '0.5px',
     transition: 'all 0.3s ease',
   },
   cancelButton: {
@@ -627,6 +765,18 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderLeft: '3px solid #ff0080',
     fontSize: '12px',
     color: '#ff8080',
+  },
+  modalExportPdf: {
+    marginTop: '14px',
+    width: '100%',
+    padding: '12px',
+    background: 'transparent',
+    border: '1px solid rgba(0,255,255,0.45)',
+    borderRadius: '8px',
+    fontSize: '12px',
+    fontWeight: 700,
+    color: '#00ffff',
+    letterSpacing: '1px',
   },
 };
 
