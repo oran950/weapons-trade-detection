@@ -5,14 +5,19 @@ import StatCard from '../components/shared/StatCard';
 import LiveStream from '../components/Detection/LiveStream';
 import CollectButton from '../components/Collection/CollectButton';
 import ProgressBar from '../components/Collection/ProgressBar';
-import DetailModal from '../components/Detection/DetailModal';
-import type { Post } from '../context/AppContext';
 
 const Dashboard: React.FC = () => {
-  const { stats, backendOnline, redditConfigured, telegramConfigured, ollamaAvailable } = useAppContext();
+  const { stats, redditConfigured, telegramConfigured, ollamaAvailable } = useAppContext();
   
   // Use background job for persistent collection (survives page refresh)
-  const { currentJob, isRunning, startJob, cancelJob, checkForActiveJob, posts: jobPosts } = useBackgroundJob();
+  const {
+    currentJob,
+    isRunning,
+    startJob,
+    cancelJob,
+    checkForActiveJob,
+    error: jobHookError,
+  } = useBackgroundJob();
   
   // Alias for consistency
   const isCollecting = isRunning;
@@ -31,12 +36,11 @@ const Dashboard: React.FC = () => {
   
   // Start Reddit collection using background job
   const startRedditCollection = async (sources: string[], limit: number) => {
-    await startJob(sources, limit, true, true);
+    await startJob('reddit', sources, limit, true, true);
   };
-  
-  // Start Telegram collection (placeholder)
+
   const startTelegramCollection = async (sources: string[], limit: number) => {
-    console.log('Telegram collection not yet implemented for background jobs');
+    await startJob('telegram', sources, limit, true, true);
   };
   
   // Cancel collection
@@ -91,6 +95,40 @@ const Dashboard: React.FC = () => {
           </button>
         )}
       </div>
+
+      {(jobHookError || (currentJob?.status === 'failed' && currentJob.error)) && (
+        <div
+          style={{
+            margin: '0 0 12px 0',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,80,80,0.5)',
+            background: 'rgba(80,0,0,0.35)',
+            color: '#ff9999',
+            fontSize: '13px',
+            lineHeight: 1.5,
+          }}
+        >
+          <strong>Collection error:</strong> {jobHookError || currentJob?.error}
+        </div>
+      )}
+
+      {currentJob?.status === 'completed' && currentJob.summary?.hint && (
+        <div
+          style={{
+            margin: '0 0 12px 0',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,200,100,0.4)',
+            background: 'rgba(60,40,0,0.35)',
+            color: '#ffcc88',
+            fontSize: '13px',
+            lineHeight: 1.5,
+          }}
+        >
+          {currentJob.summary.hint}
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div style={styles.statsGrid}>

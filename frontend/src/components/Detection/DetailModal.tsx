@@ -11,11 +11,17 @@ const DetailModal: React.FC<DetailModalProps> = ({ post, onClose }) => {
   const riskLevel = post.risk_analysis?.risk_level || 'LOW';
   const riskScore = post.risk_analysis?.risk_score || 0;
 
-  const getRiskColor = () => {
+  const getRiskColor = (): string => {
     switch (riskLevel) {
-      case 'HIGH': return '#ff0080';
-      case 'MEDIUM': return '#ffaa00';
-      case 'LOW': return '#00ff88';
+      case 'HIGH':
+      case 'CRITICAL':
+        return '#ff0080';
+      case 'MEDIUM':
+        return '#ffaa00';
+      case 'LOW':
+      case 'NONE':
+      default:
+        return '#00ff88';
     }
   };
 
@@ -70,7 +76,9 @@ const DetailModal: React.FC<DetailModalProps> = ({ post, onClose }) => {
 
         {/* Source */}
         <div style={styles.source}>
-          {post.platform === 'reddit' ? `r/${post.subreddit}` : post.channel}
+          {post.platform === 'reddit'
+            ? `r/${post.subreddit || '?'}`
+            : post.channel || post.subreddit || 'Telegram'}
           {post.score !== undefined && (
             <span style={styles.sourceMeta}>
               • ↑ {post.score} • 💬 {post.num_comments}

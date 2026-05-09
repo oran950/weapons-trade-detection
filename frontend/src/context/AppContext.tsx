@@ -65,7 +65,7 @@ export interface Post {
   llm_analysis?: LLMAnalysis | null;
   risk_analysis?: {
     risk_score: number;
-    risk_level: 'HIGH' | 'MEDIUM' | 'LOW';
+    risk_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
     confidence: number;
     flags: string[];
     detected_keywords: string[];
@@ -204,13 +204,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
       
       const riskLevel = post.risk_analysis?.risk_level || 'LOW';
+      const highRisk = riskLevel === 'HIGH' || riskLevel === 'CRITICAL';
       return {
         ...prev,
         posts: [post, ...prev.posts].slice(0, 500), // Keep max 500 posts
         stats: {
           ...prev.stats,
           totalAnalyzed: prev.stats.totalAnalyzed + 1,
-          highRiskCount: prev.stats.highRiskCount + (riskLevel === 'HIGH' ? 1 : 0),
+          highRiskCount: prev.stats.highRiskCount + (highRisk ? 1 : 0),
           mediumRiskCount: prev.stats.mediumRiskCount + (riskLevel === 'MEDIUM' ? 1 : 0),
           lowRiskCount: prev.stats.lowRiskCount + (riskLevel === 'LOW' ? 1 : 0),
         },

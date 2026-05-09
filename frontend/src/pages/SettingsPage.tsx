@@ -10,7 +10,10 @@ interface ConfigStatus {
   };
   telegram: {
     configured: boolean;
-    apiId?: string;
+    sessionFileExists?: boolean;
+    sessionFilePath?: string;
+    userApiReady?: boolean;
+    missingUserApi?: string[];
   };
   ollama: {
     available: boolean;
@@ -34,7 +37,12 @@ const SettingsPage: React.FC = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const redditStatus = await api.getRedditStatus();
+        const [redditStatus, telegramStatusRaw] = await Promise.all([
+          api.getRedditStatus(),
+          api.getTelegramConfigStatus().catch(() => null),
+        ]);
+        type TelegramCfg = Awaited<ReturnType<typeof api.getTelegramConfigStatus>>;
+        const telegramStatus: Partial<TelegramCfg> = telegramStatusRaw ?? {};
         setStatus({
           reddit: {
             configured: redditStatus.is_configured,
@@ -42,7 +50,13 @@ const SettingsPage: React.FC = () => {
             userAgent: redditStatus.user_agent,
           },
           telegram: {
-            configured: telegramConfigured,
+            configured: Boolean(
+              telegramStatus.is_configured ?? telegramConfigured
+            ),
+            sessionFileExists: telegramStatus.session_file_exists,
+            sessionFilePath: telegramStatus.session_file_path,
+            userApiReady: telegramStatus.user_api_ready_for_collection,
+            missingUserApi: telegramStatus.missing_user_api_config,
           },
           ollama: {
             available: ollamaAvailable,
@@ -57,7 +71,7 @@ const SettingsPage: React.FC = () => {
     };
 
     fetchStatus();
-  }, [telegramConfigured, ollamaAvailable]);
+  }, [telegramConfigured, ollamaAvailable, redditConfigured]);
 
   const tabs = [
     { id: 'reddit', label: 'Reddit API', icon: '🔴' },
@@ -74,6 +88,11 @@ const SettingsPage: React.FC = () => {
         <p style={styles.subtitle}>
           Configure API integrations and system preferences
         </p>
+        {loading && (
+          <p style={{ ...styles.subtitle, opacity: 0.8, marginTop: 8 }}>
+            Loading configuration…
+          </p>
+        )}
       </div>
 
       {/* Tab Navigation */}
@@ -184,6 +203,23 @@ TELEGRAM_SESSION_NAME=detector_session`}
                 <p>5. On first run, you'll need to authenticate with your phone number</p>
               </div>
             </div>
+
+            {status?.telegram.sessionFilePath && (
+              <div style={styles.section}>
+                <h3 style={styles.sectionTitle}>Session file</h3>
+                <p style={styles.hint}>
+                  {status.telegram.sessionFileExists
+                    ? 'Session file found. User API collection is ready if credentials are set.'
+                    : 'No session file yet. Run: python scripts/telegram_auth.py from the backend folder.'}
+                </p>
+                <pre style={styles.codeBlock}>{status.telegram.sessionFilePath}</pre>
+                {status.telegram.missingUserApi && status.telegram.missingUserApi.length > 0 && (
+                  <p style={styles.hint}>
+                    Missing env: {status.telegram.missingUserApi.join(', ')}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div style={styles.warningBox}>
               <span style={styles.warningIcon}>⚠️</span>

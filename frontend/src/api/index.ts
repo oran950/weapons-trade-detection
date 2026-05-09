@@ -1,7 +1,6 @@
 import type { 
   HealthResponse, 
   AnalysisResult, 
-  CollectionResult,
   RedditPost 
 } from '../types';
 
@@ -49,14 +48,26 @@ export const api = {
     return response.json();
   },
 
-  // Collect from Telegram
-  async collectTelegram(channels: string[], limit: number = 50): Promise<CollectionResult> {
-    const response = await fetch(`${API_BASE}/api/collection/telegram`, {
+  /** Start background Telegram collection (same job API as Dashboard). */
+  async collectTelegram(
+    channels: string[],
+    limit: number = 50
+  ): Promise<{ success: boolean; job_id: string; message?: string }> {
+    const response = await fetch(`${API_BASE}/api/jobs/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ channels, limit })
+      body: JSON.stringify({
+        platform: 'telegram',
+        sources: channels,
+        limit,
+        analyze_images: true,
+        llm_analysis: true,
+      }),
     });
-    if (!response.ok) throw new Error('Telegram collection failed');
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error((err as { detail?: string }).detail || 'Telegram job start failed');
+    }
     return response.json();
   },
 
@@ -64,6 +75,18 @@ export const api = {
   async getRedditStatus(): Promise<any> {
     const response = await fetch(`${API_BASE}/api/reddit/config-status`);
     if (!response.ok) throw new Error('Failed to get Reddit status');
+    return response.json();
+  },
+
+  async getTelegramConfigStatus(): Promise<{
+    is_configured?: boolean;
+    user_api_ready_for_collection?: boolean;
+    session_file_exists?: boolean;
+    session_file_path?: string;
+    missing_user_api_config?: string[];
+  }> {
+    const response = await fetch(`${API_BASE}/api/telegram/config-status`);
+    if (!response.ok) throw new Error('Failed to get Telegram status');
     return response.json();
   },
 

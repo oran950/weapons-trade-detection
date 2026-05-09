@@ -22991,3 +22991,35 @@ See https://praw.readthedocs.io/en/latest/getting_started/multiple_instances.htm
 2026-05-09 12:58:36 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
 2026-05-09 12:58:36 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
 2026-05-09 12:58:36 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']
+2026-05-09 12:58:44 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-05-09 12:58:44 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
+2026-05-09 12:58:44 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']
+2026-05-09 12:58:46 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-05-09 12:58:46 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
+2026-05-09 12:58:46 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']
+2026-05-09 12:58:46 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-05-09 12:58:46 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
+2026-05-09 12:58:46 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']
+2026-05-09 12:58:53 | INFO | httpx | HTTP Request: POST http://ollama:11434/api/generate "HTTP/1.1 200 OK"
+2026-05-09 12:58:54 | INFO | httpx | HTTP Request: GET https://external-preview.redd.it/A9bDG9JATCzdtiy9vtxNGoiAsKDdDmtKXSszIlZdqMw.jpg?auto=webp&s=8e1a0286fb0d19cb8b3c2bc8daa048a2d567d46e "HTTP/1.1 200 OK"
+2026-05-09 12:58:54 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-05-09 12:58:54 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
+2026-05-09 12:58:54 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']
+2026-05-09 12:58:56 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-05-09 12:58:56 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
+2026-05-09 12:58:56 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']
+2026-05-09 12:59:04 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-05-09 12:59:04 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
+2026-05-09 12:59:04 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']
+2026-05-09 12:59:06 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-05-09 12:59:06 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
+2026-05-09 12:59:06 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']
+2026-05-09 12:59:14 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-05-09 12:59:15 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
+2026-05-09 12:59:15 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']
+2026-05-09 12:59:16 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-05-09 12:59:16 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
+2026-05-09 12:59:16 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']
+2026-05-09 12:59:17 | DEBUG | WeaponsDetectionAPI | 🏥 Health check requested
+2026-05-09 12:59:17 | INFO | httpx | HTTP Request: GET http://ollama:11434/api/tags "HTTP/1.1 200 OK"
+2026-05-09 12:59:17 | DEBUG | WeaponsDetectionAPI | ✅ Ollama reachable, models=['llava:7b', 'llama3.1:8b', 'llama3.2:3b']

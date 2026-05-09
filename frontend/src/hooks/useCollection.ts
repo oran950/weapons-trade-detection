@@ -13,6 +13,7 @@ interface CollectionConfig {
 export function useCollection() {
   const {
     isCollecting,
+    collectionPlatform,
     startCollection,
     stopCollection,
     addPost,
@@ -26,10 +27,16 @@ export function useCollection() {
   const [phaseMessage, setPhaseMessage] = useState<string>('');
 
   const handleStart = useCallback((data: any) => {
-    // Set expected total from start event
-    setProgress({ current: 0, total: data.total_posts || 50 });
+    const sourceCount =
+      (data.subreddits?.length ?? 0) ||
+      (data.channels?.length ?? 0) ||
+      0;
+    const total = data.total_posts || 50;
+    setProgress({ current: 0, total });
     setPhase('collecting');
-    setPhaseMessage(`Collecting ${data.total_posts} posts from ${data.subreddits?.length || 0} sources...`);
+    setPhaseMessage(
+      `Collecting ${total} items from ${sourceCount} source(s)...`
+    );
   }, []);
 
   const handlePhase = useCallback((data: any) => {
@@ -47,7 +54,7 @@ export function useCollection() {
       title: postData.title,
       content: postData.content,
       subreddit: postData.subreddit,
-      channel: postData.channel,
+      channel: postData.channel ?? postData.chat_title,
       author_hash: postData.author_hash,
       score: postData.score,
       num_comments: postData.num_comments,
@@ -82,11 +89,14 @@ export function useCollection() {
     stopCollection();
 
     // Create session record
+    const platform =
+      collectionPlatform ||
+      (data.channels_collected?.length ? 'telegram' : 'reddit');
     const session: CollectionSession = {
       id: `session_${Date.now()}`,
-      platform: 'reddit',
+      platform,
       timestamp: data.timestamp,
-      sources: data.subreddits_collected || data.channels_collected || [],
+      sources: data.channels_collected || data.subreddits_collected || [],
       total_collected: data.total_collected,
       high_risk: data.high_risk_count,
       medium_risk: data.medium_risk_count,
@@ -94,7 +104,7 @@ export function useCollection() {
       posts: [...collectedPosts],
     };
     addSession(session);
-  }, [stopCollection, addSession, collectedPosts]);
+  }, [stopCollection, addSession, collectedPosts, collectionPlatform]);
 
   const handleError = useCallback((error: any) => {
     console.error('Collection error:', error);
