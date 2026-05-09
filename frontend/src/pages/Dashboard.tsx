@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
+import { API_ORIGIN } from '../config/api';
 import { useBackgroundJob } from '../hooks/useBackgroundJob';
 import StatCard from '../components/shared/StatCard';
 import LiveStream from '../components/Detection/LiveStream';
@@ -55,7 +56,7 @@ const Dashboard: React.FC = () => {
     if (!analyzeText.trim()) return;
     
     try {
-      const response = await fetch('http://localhost:9000/api/detection/analyze', {
+      const response = await fetch(`${API_ORIGIN}/api/detection/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: analyzeText }),

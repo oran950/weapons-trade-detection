@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useSSE } from './useSSE';
 import { useAppContext, Post, CollectionSession } from '../context/AppContext';
+import { API_ORIGIN } from '../config/api';
 
-const API_BASE = 'http://localhost:9000';
+const API_BASE = API_ORIGIN;
 
 interface CollectionConfig {
   platform: 'reddit' | 'telegram';

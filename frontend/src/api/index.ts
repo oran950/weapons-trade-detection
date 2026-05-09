@@ -3,8 +3,9 @@ import type {
   AnalysisResult, 
   RedditPost 
 } from '../types';
+import { API_ORIGIN } from '../config/api';
 
-const API_BASE = 'http://localhost:9000';
+const API_BASE = API_ORIGIN;
 
 export const api = {
   // Health check

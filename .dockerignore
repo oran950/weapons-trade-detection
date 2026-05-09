@@ -1,0 +1,11 @@
+# Build context is repo root; only backend/ is COPY'd but the daemon still receives context.
+frontend/node_modules
+frontend/build
+**/__pycache__
+**/*.pyc
+**/venv
+.git
+.env
+**/*.log
+.DS_Store
+.cursor

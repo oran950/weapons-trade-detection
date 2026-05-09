@@ -183,3 +183,9 @@ class AppConfig:
     
     # Ollama LLM configuration
     ollama = OllamaConfig
+
+    @classmethod
+    def cors_origins(cls) -> List[str]:
+        """Comma-separated browser origins allowed for CORS (e.g. frontend on Cloudflare Pages)."""
+        raw = os.getenv("CORS_ORIGINS", "http://localhost:3000")
+        return [o.strip() for o in raw.split(",") if o.strip()]

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { API_ORIGIN } from '../config/api';
 
 // Types
 export interface WeaponDetection {
@@ -155,7 +156,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const response = await fetch('http://localhost:9000/health');
+        const response = await fetch(`${API_ORIGIN}/health`);
         if (response.ok) {
           const data = await response.json();
           setState(prev => ({
@@ -230,7 +231,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       let highDelta = 0, mediumDelta = 0, lowDelta = 0;
       newPosts.forEach(p => {
         const level = p.risk_analysis?.risk_level || 'LOW';
-        if (level === 'HIGH') highDelta++;
+        if (level === 'HIGH' || level === 'CRITICAL') highDelta++;
         else if (level === 'MEDIUM') mediumDelta++;
         else lowDelta++;
       });
@@ -239,7 +240,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         posts: [...newPosts, ...prev.posts].slice(0, 500),
         stats: {
           ...prev.stats,
-          totalAnalyzed: prev.stats.totalAnalyzed + posts.length,
+          totalAnalyzed: prev.stats.totalAnalyzed + newPosts.length,
           highRiskCount: prev.stats.highRiskCount + highDelta,
           mediumRiskCount: prev.stats.mediumRiskCount + mediumDelta,
           lowRiskCount: prev.stats.lowRiskCount + lowDelta,

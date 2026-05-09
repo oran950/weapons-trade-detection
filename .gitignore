@@ -6,3 +6,4 @@ backend/.env
 
 # Data directories
 collected_data/
+backend/data/

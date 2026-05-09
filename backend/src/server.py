@@ -184,6 +184,17 @@ class JobStore:
     def list_jobs(self, limit: int = 10) -> List[Dict]:
         jobs = sorted(self._jobs.values(), key=lambda j: j.created_at, reverse=True)
         return [j.to_dict() for j in jobs[:limit]]
+
+    def get_latest_terminal_job(self) -> Optional[CollectionJob]:
+        """Most recently updated completed/failed/cancelled job (for UI restore after refresh)."""
+        terminal = {JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED}
+        best: Optional[CollectionJob] = None
+        for job in self._jobs.values():
+            if job.status not in terminal:
+                continue
+            if best is None or job.updated_at > best.updated_at:
+                best = job
+        return best
     
     def cleanup_old_jobs(self, max_age_hours: int = 24):
         """Remove jobs older than max_age_hours"""
@@ -198,8 +209,50 @@ class JobStore:
             for job_id in to_remove:
                 del self._jobs[job_id]
 
-# Global job store instance
-job_store = JobStore()
+
+class PersistentJobStore(JobStore):
+    """JobStore that writes to SQLite so jobs survive server restarts and page reloads."""
+
+    def create_job(self, platform: str, sources: List[str], limit: int) -> CollectionJob:
+        job = super().create_job(platform, sources, limit)
+        import job_persistence as _jp
+
+        _jp.persist_job_snapshot(job)
+        return job
+
+    def update_job(self, job_id: str, **kwargs):
+        super().update_job(job_id, **kwargs)
+        job = self.get_job(job_id)
+        if job:
+            import job_persistence as _jp
+
+            _jp.persist_job_snapshot(job)
+
+    def add_post(self, job_id: str, post: Dict):
+        super().add_post(job_id, post)
+        job = self.get_job(job_id)
+        if job:
+            import job_persistence as _jp
+
+            _jp.persist_post(job_id, len(job.posts) - 1, post)
+            _jp.persist_job_snapshot(job)
+
+    def cancel_job(self, job_id: str):
+        super().cancel_job(job_id)
+        job = self.get_job(job_id)
+        if job:
+            import job_persistence as _jp
+
+            _jp.persist_job_snapshot(job)
+
+
+import job_persistence as _job_persistence
+
+_job_persistence.init_job_db()
+job_store = PersistentJobStore()
+_n_restored = _job_persistence.load_jobs_into_store(job_store, JobStatus, CollectionJob)
+if _n_restored:
+    log_print(f"📂 Restored {_n_restored} collection job(s) from local DB ({_job_persistence.job_db_path()})")
 
 
 # Create FastAPI app
@@ -216,7 +269,7 @@ content_generator = SyntheticContentGenerator()
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=AppConfig.cors_origins(),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
@@ -287,16 +340,27 @@ async def _require_ollama_if_mandatory(*, llm: bool, vision: bool) -> None:
 
 @app.get("/api/jobs/current")
 async def get_current_job():
-    """Get the currently active job (if any) - for reconnecting after page refresh"""
+    """Active job for polling, or latest finished job + posts so the UI can restore after refresh."""
     job = job_store.get_active_job()
     log_print(f"🔄 Checking for active job: {'Found ' + job.id if job else 'None'}")
     if job:
         return {
             "has_active_job": True,
             "job": job.to_dict(),
-            "posts": job.posts[-50:]  # Return last 50 posts for live view
+            "posts": job.posts[-50:],
+            "latest_job": None,
+            "latest_posts": [],
         }
-    return {"has_active_job": False, "job": None, "posts": []}
+    latest = job_store.get_latest_terminal_job()
+    if latest:
+        return {
+            "has_active_job": False,
+            "job": None,
+            "posts": [],
+            "latest_job": latest.to_dict(),
+            "latest_posts": latest.posts[-100:] if latest.posts else [],
+        }
+    return {"has_active_job": False, "job": None, "posts": [], "latest_job": None, "latest_posts": []}
 
 @app.get("/api/jobs/{job_id}")
 async def get_job_status(job_id: str):

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppContext, Post } from '../context/AppContext';
+import { API_ORIGIN } from '../config/api';
 
-const API_BASE = 'http://localhost:9000';
+const API_BASE = API_ORIGIN;
 
 interface JobStatus {
   id: string;
@@ -38,8 +39,35 @@ interface UseBackgroundJobReturn {
   checkForActiveJob: () => Promise<void>;
 }
 
+function mapApiPostToPost(postData: Record<string, unknown>): Post {
+  return {
+    id: String(postData.id),
+    title: String(postData.title ?? ''),
+    content: String(postData.content ?? ''),
+    subreddit: postData.subreddit as string | undefined,
+    channel: postData.channel as string | undefined,
+    author_hash: String(postData.author_hash ?? ''),
+    score: postData.score as number | undefined,
+    num_comments: postData.num_comments as number | undefined,
+    url: String(postData.url ?? ''),
+    created_utc: postData.created_utc as number | undefined,
+    collected_at: String(postData.collected_at ?? ''),
+    platform: (postData.platform as Post['platform']) || 'reddit',
+    image_url: postData.image_url as string | null | undefined,
+    thumbnail: postData.thumbnail as string | null | undefined,
+    media_type: postData.media_type as Post['media_type'] | undefined,
+    gallery_images: postData.gallery_images as string[] | null | undefined,
+    is_video: postData.is_video as boolean | undefined,
+    video_url: postData.video_url as string | null | undefined,
+    image_analysis: postData.image_analysis as Post['image_analysis'],
+    annotated_image: postData.annotated_image as string | null | undefined,
+    llm_analysis: postData.llm_analysis as Post['llm_analysis'],
+    risk_analysis: postData.risk_analysis as Post['risk_analysis'],
+  };
+}
+
 export function useBackgroundJob(): UseBackgroundJobReturn {
-  const { addPost, startCollection, stopCollection } = useAppContext();
+  const { addPost, addPosts, startCollection, stopCollection } = useAppContext();
   
   const [currentJob, setCurrentJob] = useState<JobStatus | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -64,35 +92,10 @@ export function useBackgroundJob(): UseBackgroundJobReturn {
       // Add new posts to the context
       if (data.posts && data.posts.length > lastPostCountRef.current) {
         const newPosts = data.posts.slice(lastPostCountRef.current);
-        newPosts.forEach((postData: any) => {
-          const post: Post = {
-            id: postData.id,
-            title: postData.title,
-            content: postData.content,
-            subreddit: postData.subreddit,
-            channel: postData.channel,
-            author_hash: postData.author_hash,
-            score: postData.score,
-            num_comments: postData.num_comments,
-            url: postData.url,
-            created_utc: postData.created_utc,
-            collected_at: postData.collected_at,
-            platform: postData.platform || 'reddit',
-            image_url: postData.image_url,
-            thumbnail: postData.thumbnail,
-            media_type: postData.media_type,
-            gallery_images: postData.gallery_images,
-            is_video: postData.is_video,
-            video_url: postData.video_url,
-            image_analysis: postData.image_analysis,
-            annotated_image: postData.annotated_image,
-            llm_analysis: postData.llm_analysis,
-            risk_analysis: postData.risk_analysis,
-          };
-          addPost(post);
-        });
+        const mapped = newPosts.map((p: Record<string, unknown>) => mapApiPostToPost(p));
+        mapped.forEach((post: Post) => addPost(post));
         lastPostCountRef.current = data.posts.length;
-        setPosts(data.posts);
+        setPosts(data.posts as unknown as Post[]);
       }
       
       // Stop polling if job is done
@@ -140,11 +143,21 @@ export function useBackgroundJob(): UseBackgroundJobReturn {
         startPolling(data.job.id);
         const plat = (data.job.platform as 'reddit' | 'telegram') || 'reddit';
         startCollection(plat);
+      } else if (data.latest_job) {
+        // Restore last finished job from local DB (backend SQLite) after page refresh
+        setCurrentJob(data.latest_job as JobStatus);
+        const lp = (data.latest_posts || []).map((p: Record<string, unknown>) => mapApiPostToPost(p));
+        setPosts(lp);
+        lastPostCountRef.current = lp.length;
+        if (lp.length > 0) {
+          addPosts(lp);
+        }
+        stopCollection();
       }
     } catch (err) {
       console.error('Error checking for active job:', err);
     }
-  }, [startPolling, startCollection]);
+  }, [startPolling, startCollection, addPosts, stopCollection]);
 
   // Start a new job
   const startJob = useCallback(async (

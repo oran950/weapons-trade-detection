@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import api from '../api';
+import { API_ORIGIN } from '../config/api';
 
 interface ConfigStatus {
   reddit: {
@@ -334,7 +335,7 @@ OLLAMA_MODEL=llama3.1:8b`}
                 </div>
                 <div style={styles.configItem}>
                   <span style={styles.configLabel}>Backend API</span>
-                  <span style={styles.configValue}>http://localhost:9000</span>
+                  <span style={styles.configValue}>{API_ORIGIN}</span>
                 </div>
               </div>
             </div>
