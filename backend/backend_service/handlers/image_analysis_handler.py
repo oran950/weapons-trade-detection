@@ -188,7 +188,30 @@ Be thorough but avoid false positives. Common false positives to avoid:
                 processing_time_ms=0,
                 model_used=self.vision_model
             )
-        
+        return await self._analyze_image_data(image_data, image_url, start_time)
+
+    async def analyze_image_bytes(self, image_bytes: bytes, source_label: str = "inline") -> ImageAnalysisResult:
+        """Analyze raw image bytes (e.g. Telegram Telethon download_media)."""
+        start_time = datetime.now()
+        label = source_label[:120] if source_label else "inline"
+        print(f"🔫 Vision analyzing bytes: {label}...", flush=True)
+        if not image_bytes:
+            return ImageAnalysisResult(
+                image_url=label,
+                analyzed_at=datetime.now().isoformat(),
+                contains_weapons=False,
+                weapon_count=0,
+                detections=[],
+                overall_risk="LOW",
+                risk_score=0.0,
+                analysis_notes="Empty image bytes",
+                processing_time_ms=0,
+                model_used=self.vision_model
+            )
+        return await self._analyze_image_data(image_bytes, label, start_time)
+
+    async def _analyze_image_data(self, image_data: bytes, image_url: str, start_time: datetime) -> ImageAnalysisResult:
+        """Resize/compress, call LLaVA, parse response (shared by URL and bytes paths)."""
         # Resize image if too large (speeds up LLaVA significantly)
         if PIL_AVAILABLE and len(image_data) > 500000:  # If > 500KB
             try:

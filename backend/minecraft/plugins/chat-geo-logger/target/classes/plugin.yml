@@ -1,0 +1,5 @@
+name: ChatGeoLogger
+main: com.oran.chatgeologger.ChatGeoLogger
+version: 1.0.0
+api-version: "1.21"
+
