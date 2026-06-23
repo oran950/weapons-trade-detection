@@ -25,7 +25,6 @@ const Dashboard: React.FC = () => {
     isRunning,
     startJob,
     cancelJob,
-    checkForActiveJob,
     error: jobHookError,
   } = useBackgroundJob();
   
@@ -38,11 +37,6 @@ const Dashboard: React.FC = () => {
                 currentJob?.status === 'analyzing' ? 'analyzing' : 'idle';
   const phaseMessage = currentJob?.phase_message || '';
   const summary = currentJob?.summary;
-  
-  // Check for active job on mount (for page refresh reconnection)
-  useEffect(() => {
-    checkForActiveJob();
-  }, [checkForActiveJob]);
   
   // Start Reddit collection using background job
   const startRedditCollection = async (sources: string[], limit: number) => {
@@ -168,7 +162,7 @@ const Dashboard: React.FC = () => {
           style={styles.analyzeButton}
           onClick={() => setShowAnalyzeModal(true)}
         >
-          🔍 ANALYZE TEXT
+          ANALYZE TEXT
         </button>
         <button
           type="button"
@@ -180,7 +174,7 @@ const Dashboard: React.FC = () => {
           disabled={!canExportDigest || digestLoading}
           onClick={handleExportDigest}
         >
-          {digestLoading ? 'EXPORTING…' : '📄 EXPORT ALL PDF'}
+          {digestLoading ? 'EXPORTING…' : 'EXPORT ALL PDF'}
         </button>
         {isCollecting && (
           <button style={styles.cancelButton} onClick={cancelCollection}>
@@ -242,26 +236,22 @@ const Dashboard: React.FC = () => {
       {/* Stats Grid */}
       <div style={styles.statsGrid}>
         <StatCard
-          icon="⚠️"
           label="Active Threats"
           value={stats.highRiskCount}
           color="#ff0080"
           linkTo="/threats"
         />
         <StatCard
-          icon="📊"
           label="Posts Analyzed"
           value={stats.totalAnalyzed}
           color="#00ffff"
         />
         <StatCard
-          icon="🌐"
           label="Platforms"
           value={stats.platformsMonitored}
           color="#00ff88"
         />
         <StatCard
-          icon="🎯"
           label="Accuracy"
           value="94.7%"
           color="#ffaa00"
@@ -287,10 +277,10 @@ const Dashboard: React.FC = () => {
                 ...styles.cardTitle,
                 color: (phase === 'analyzing' || currentJob?.status === 'analyzing') ? '#00ffff' : '#ffaa00',
               }}>
-                {(phase === 'collecting' || currentJob?.status === 'collecting') && '📥 COLLECTING...'}
-                {(phase === 'analyzing' || currentJob?.status === 'analyzing') && '🧠 ANALYZING WITH AI...'}
-                {phase === 'idle' && !currentJob && '⏳ STARTING...'}
-                {currentJob?.status === 'pending' && '⏳ STARTING...'}
+                {(phase === 'collecting' || currentJob?.status === 'collecting') && 'COLLECTING...'}
+                {(phase === 'analyzing' || currentJob?.status === 'analyzing') && 'ANALYZING WITH AI...'}
+                {phase === 'idle' && !currentJob && 'STARTING...'}
+                {currentJob?.status === 'pending' && 'STARTING...'}
               </h3>
               <div style={styles.phaseMessage}>
                 {currentJob?.phase_message || phaseMessage}
@@ -310,7 +300,7 @@ const Dashboard: React.FC = () => {
           {/* Collection Summary - Shows after collection completes */}
           {((summary && !isCollecting) || currentJob?.status === 'completed') && (
             <div style={styles.summaryCard}>
-              <h3 style={styles.summaryTitle}>📊 COLLECTION COMPLETE</h3>
+              <h3 style={styles.summaryTitle}>COLLECTION COMPLETE</h3>
               <div style={styles.summaryStats}>
                 <div style={styles.summaryRow}>
                   <span style={styles.summaryLabel}>Total Scanned:</span>
@@ -318,31 +308,31 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div style={styles.summaryDivider} />
                 <div style={styles.summaryRow}>
-                  <span style={{...styles.summaryLabel, color: '#ff0080'}}>🔴 HIGH RISK:</span>
+                  <span style={{...styles.summaryLabel, color: '#ff0080'}}>HIGH RISK:</span>
                   <span style={{...styles.summaryValue, color: '#ff0080'}}>{summary.high_risk_count || 0}</span>
                 </div>
                 <div style={styles.summaryRow}>
-                  <span style={{...styles.summaryLabel, color: '#ffaa00'}}>🟡 MEDIUM:</span>
+                  <span style={{...styles.summaryLabel, color: '#ffaa00'}}>MEDIUM:</span>
                   <span style={{...styles.summaryValue, color: '#ffaa00'}}>{summary.medium_risk_count || 0}</span>
                 </div>
                 <div style={styles.summaryRow}>
-                  <span style={{...styles.summaryLabel, color: '#00ff88'}}>🟢 LOW:</span>
+                  <span style={{...styles.summaryLabel, color: '#00ff88'}}>LOW:</span>
                   <span style={{...styles.summaryValue, color: '#00ff88'}}>{summary.low_risk_count || 0}</span>
                 </div>
                 <div style={styles.summaryRow}>
-                  <span style={{...styles.summaryLabel, color: '#666'}}>⚪ Filtered (0%):</span>
+                  <span style={{...styles.summaryLabel, color: '#666'}}>Filtered (0%):</span>
                   <span style={{...styles.summaryValue, color: '#666'}}>{summary.filtered_out || 0}</span>
                 </div>
                 <div style={styles.summaryDivider} />
                 {summary.weapons_detected > 0 && (
                   <div style={styles.summaryRow}>
-                    <span style={{...styles.summaryLabel, color: '#ff3366'}}>🔫 Weapons Found:</span>
+                    <span style={{...styles.summaryLabel, color: '#ff3366'}}>Weapons Found:</span>
                     <span style={{...styles.summaryValue, color: '#ff3366'}}>{summary.weapons_detected}</span>
                   </div>
                 )}
                 {summary.illegal_trade_detected > 0 && (
                   <div style={styles.summaryRow}>
-                    <span style={{...styles.summaryLabel, color: '#ff0000'}}>🚨 Illegal Trade:</span>
+                    <span style={{...styles.summaryLabel, color: '#ff0000'}}>Illegal Trade:</span>
                     <span style={{...styles.summaryValue, color: '#ff0000'}}>{summary.illegal_trade_detected}</span>
                   </div>
                 )}
@@ -355,7 +345,7 @@ const Dashboard: React.FC = () => {
 
           {/* Service Status */}
           <div style={styles.statusCard}>
-            <h3 style={styles.cardTitle}>🔍 SERVICE STATUS</h3>
+            <h3 style={styles.cardTitle}>SERVICE STATUS</h3>
             <div style={styles.statusList}>
               <div style={styles.statusItem}>
                 <span>Reddit Monitor</span>
@@ -389,7 +379,7 @@ const Dashboard: React.FC = () => {
 
           {/* Detection Breakdown */}
           <div style={styles.breakdownCard}>
-            <h3 style={styles.cardTitle}>📈 DETECTION BREAKDOWN</h3>
+            <h3 style={styles.cardTitle}>DETECTION BREAKDOWN</h3>
             <div style={styles.breakdownList}>
               <div style={styles.breakdownItem}>
                 <span style={{ color: '#ff0080' }}>High Risk</span>
@@ -403,13 +393,17 @@ const Dashboard: React.FC = () => {
                 <span style={{ color: '#00ff88' }}>Low Risk</span>
                 <span style={styles.breakdownValue}>{stats.lowRiskCount}</span>
               </div>
+              <div style={{ ...styles.breakdownItem, borderTop: '1px solid rgba(0,255,255,0.15)', paddingTop: '10px', marginTop: '4px' }}>
+                <span style={{ color: '#00ffff' }}>Total Detected</span>
+                <span style={{ ...styles.breakdownValue, color: '#00ffff' }}>{stats.totalAnalyzed}</span>
+              </div>
             </div>
           </div>
 
           {/* Summary Card (after collection) */}
           {summary && (
             <div style={styles.summaryCard}>
-              <h3 style={styles.cardTitle}>✅ COLLECTION COMPLETE</h3>
+              <h3 style={styles.cardTitle}>COLLECTION COMPLETE</h3>
               <div style={styles.summaryContent}>
                 <div>Collected: {summary.total_collected} posts</div>
                 <div>High Risk: {summary.high_risk_count}</div>
@@ -425,7 +419,7 @@ const Dashboard: React.FC = () => {
       {showAnalyzeModal && (
         <div style={styles.modalOverlay} onClick={() => setShowAnalyzeModal(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 style={styles.modalTitle}>🔍 Analyze Text for Threats</h3>
+            <h3 style={styles.modalTitle}>Analyze Text for Threats</h3>
             <textarea
               value={analyzeText}
               onChange={(e) => setAnalyzeText(e.target.value)}

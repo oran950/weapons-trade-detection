@@ -1,4 +1,8 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
+import { computeRiskStats } from '../utils/riskStats';
+
+// Legacy key — cleared on startup so map does not persist across restarts
+const LEGACY_HEATMAP_STORAGE_KEY = 'wt-heatmap-points';
 
 // Types
 export interface WeaponDetection {
@@ -38,6 +42,26 @@ export interface LLMAnalysis {
   error?: string;
 }
 
+export interface GeoLocation {
+  latitude: number;
+  longitude: number;
+  label: string;
+  source: 'metadata' | 'ip' | 'photo_exif' | 'text' | string;
+}
+
+export interface HeatmapPoint {
+  postId: string;
+  latitude: number;
+  longitude: number;
+  label: string;
+  source: string;
+  platform: 'reddit' | 'telegram';
+  riskLevel: string;
+  collectedAt: string;
+  title: string;
+  intensity: number;
+}
+
 export interface Post {
   id: string;
   title: string;
@@ -71,6 +95,7 @@ export interface Post {
     detected_keywords: string[];
     detected_patterns: string[];
   };
+  geo_location?: GeoLocation | null;
 }
 
 export interface CollectionSession {
@@ -151,6 +176,11 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AppState>(defaultState);
 
+  // Map data is session-only; wipe any persisted heatmap from prior versions
+  useEffect(() => {
+    localStorage.removeItem(LEGACY_HEATMAP_STORAGE_KEY);
+  }, []);
+
   // Check backend health on mount and periodically
   useEffect(() => {
     const checkHealth = async () => {
@@ -198,58 +228,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const addPost = useCallback((post: Post) => {
     setState(prev => {
-      // Check for duplicate - skip if post with same ID already exists
       if (prev.posts.some(p => p.id === post.id)) {
         return prev;
       }
-      
-      const riskLevel = post.risk_analysis?.risk_level || 'LOW';
-      const highRisk = riskLevel === 'HIGH' || riskLevel === 'CRITICAL';
+
       return {
         ...prev,
-        posts: [post, ...prev.posts].slice(0, 500), // Keep max 500 posts
-        stats: {
-          ...prev.stats,
-          totalAnalyzed: prev.stats.totalAnalyzed + 1,
-          highRiskCount: prev.stats.highRiskCount + (highRisk ? 1 : 0),
-          mediumRiskCount: prev.stats.mediumRiskCount + (riskLevel === 'MEDIUM' ? 1 : 0),
-          lowRiskCount: prev.stats.lowRiskCount + (riskLevel === 'LOW' ? 1 : 0),
-        },
+        posts: [post, ...prev.posts].slice(0, 500),
       };
     });
   }, []);
 
   const addPosts = useCallback((posts: Post[]) => {
     setState(prev => {
-      // Filter out duplicates
       const existingIds = new Set(prev.posts.map(p => p.id));
       const newPosts = posts.filter(p => !existingIds.has(p.id));
-      
+
       if (newPosts.length === 0) return prev;
-      
-      let highDelta = 0, mediumDelta = 0, lowDelta = 0;
-      newPosts.forEach(p => {
-        const level = p.risk_analysis?.risk_level || 'LOW';
-        if (level === 'HIGH') highDelta++;
-        else if (level === 'MEDIUM') mediumDelta++;
-        else lowDelta++;
-      });
+
       return {
         ...prev,
         posts: [...newPosts, ...prev.posts].slice(0, 500),
-        stats: {
-          ...prev.stats,
-          totalAnalyzed: prev.stats.totalAnalyzed + posts.length,
-          highRiskCount: prev.stats.highRiskCount + highDelta,
-          mediumRiskCount: prev.stats.mediumRiskCount + mediumDelta,
-          lowRiskCount: prev.stats.lowRiskCount + lowDelta,
-        },
       };
     });
   }, []);
 
   const clearPosts = useCallback(() => {
-    setState(prev => ({ ...prev, posts: [] }));
+    setState(prev => ({
+      ...prev,
+      posts: [],
+    }));
   }, []);
 
   const addSession = useCallback((session: CollectionSession) => {
@@ -280,10 +288,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   }, []);
 
+  const stats = useMemo(
+    () => ({
+      ...computeRiskStats(state.posts),
+      platformsMonitored: state.stats.platformsMonitored,
+    }),
+    [state.posts, state.stats.platformsMonitored],
+  );
+
   return (
     <AppContext.Provider
       value={{
         ...state,
+        stats,
         startCollection,
         stopCollection,
         addPost,

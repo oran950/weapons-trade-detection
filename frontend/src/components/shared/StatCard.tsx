@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface StatCardProps {
-  icon: string;
+  icon?: string;
   label: string;
   value: string | number;
   color?: string;
@@ -47,9 +47,11 @@ const StatCard: React.FC<StatCardProps> = ({
         e.currentTarget.style.boxShadow = 'none';
       }}
     >
-      <div style={styles.iconContainer}>
-        <span style={{ fontSize: '28px' }}>{icon}</span>
-      </div>
+      {icon && (
+        <div style={styles.iconContainer}>
+          <span style={{ fontSize: '28px' }}>{icon}</span>
+        </div>
+      )}
       <div style={styles.content}>
         <div style={{ ...styles.label, color: color }}>{label}</div>
         <div style={styles.value}>{value}</div>

@@ -13,7 +13,6 @@ const Header: React.FC = () => {
   return (
     <header style={styles.header}>
       <div style={styles.leftSection}>
-        <div style={styles.logo}>🎯</div>
         <div style={styles.titleContainer}>
           <h1 style={styles.title}>
             <span style={styles.titleAccent}>WEAPONS</span> TRADE MONITOR
@@ -71,10 +70,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     gap: '15px',
-  },
-  logo: {
-    fontSize: '32px',
-    filter: 'drop-shadow(0 0 10px rgba(0,255,255,0.5))',
   },
   titleContainer: {
     display: 'flex',

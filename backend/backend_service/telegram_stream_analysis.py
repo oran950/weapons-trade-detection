@@ -131,6 +131,7 @@ async def analyze_telegram_item(
     annotated_image = None
     did_image_analysis = False
     weapons_found = False
+    image_bytes: Optional[bytes] = None
 
     should_analyze_image = False
     if (
@@ -146,9 +147,16 @@ async def analyze_telegram_item(
             or (not combined_text and message.photo)
         )
 
-    if should_analyze_image:
+    if getattr(message, "photo", None) and not is_video_msg:
         try:
             image_bytes = await client.download_media(message, file=bytes)
+        except Exception:
+            image_bytes = None
+
+    if should_analyze_image:
+        try:
+            if image_bytes is None:
+                image_bytes = await client.download_media(message, file=bytes)
             if image_bytes:
                 label = f"tg:{channel_username}:{message.id}"
                 image_result = await image_analyzer.analyze_image_bytes(
@@ -235,6 +243,19 @@ async def analyze_telegram_item(
             log_print(f"⚠️ Telegram LLM error {channel_username}/{message.id}: {llm_err}")
             llm_result = {"error": str(llm_err), "is_potentially_illegal": False}
 
+    from backend_service.utils.location_resolver import resolve_post_location
+
+    geo_location = resolve_post_location(
+        text=combined_text,
+        message=message,
+        image_bytes=image_bytes,
+        subreddit=f"@{channel_username}",
+        channel=channel_username,
+        chat_title=channel_title,
+        link_url=f"https://t.me/{channel_username}/{message.id}",
+        llm_text=(llm_result or {}).get("summary") if llm_result else None,
+    )
+
     created = message.date.timestamp() if message.date else 0.0
     post_data = {
         "id": f"tg-{channel_username}-{message.id}",
@@ -270,6 +291,7 @@ async def analyze_telegram_item(
             "detected_keywords": analysis.get("detected_keywords", []),
             "detected_patterns": analysis.get("detected_patterns", []),
         },
+        "geo_location": geo_location,
     }
 
     log_print(

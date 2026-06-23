@@ -1,30 +1,30 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
+import { buildMapMarkers } from '../../utils/mapMarkers';
 
 interface NavItem {
   path: string;
   label: string;
-  icon: string;
   badge?: number;
 }
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { stats, redditConfigured, telegramConfigured } = useAppContext();
+  const { stats, redditConfigured, telegramConfigured, posts } = useAppContext();
 
-  // Count posts with media
-  const { posts } = useAppContext();
   const mediaCount = posts.filter((p: any) => p.image_url || p.video_url || (p.gallery_images && p.gallery_images.length > 0)).length;
+  const heatmapBadge = buildMapMarkers(posts).length;
 
   const navItems: NavItem[] = [
-    { path: '/', label: 'Dashboard', icon: '📊' },
-    { path: '/threats', label: 'Active Threats', icon: '⚠️', badge: stats.highRiskCount },
-    { path: '/media', label: 'Media Library', icon: '🖼️', badge: mediaCount > 0 ? mediaCount : undefined },
-    { path: '/history', label: 'Collection History', icon: '📜' },
-    { path: '/analytics', label: 'Analytics', icon: '📈' },
-    { path: '/settings', label: 'Settings', icon: '⚙️' },
+    { path: '/', label: 'Dashboard' },
+    { path: '/threats', label: 'Active Threats', badge: stats.highRiskCount },
+    { path: '/media', label: 'Media Library', badge: mediaCount > 0 ? mediaCount : undefined },
+    { path: '/heatmap', label: 'Heatmap', badge: heatmapBadge > 0 ? heatmapBadge : undefined },
+    { path: '/history', label: 'Collection History' },
+    { path: '/analytics', label: 'Analytics' },
+    { path: '/settings', label: 'Settings' },
   ];
 
   return (
@@ -53,7 +53,6 @@ const Sidebar: React.FC = () => {
                 }
               }}
             >
-              <span style={styles.navIcon}>{item.icon}</span>
               <span style={styles.navLabel}>{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
                 <span style={styles.badge}>{item.badge}</span>
@@ -127,9 +126,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderColor: '#00ffff',
     color: '#00ffff',
     boxShadow: '0 0 20px rgba(0,255,255,0.1)',
-  },
-  navIcon: {
-    fontSize: '18px',
   },
   navLabel: {
     flex: 1,
