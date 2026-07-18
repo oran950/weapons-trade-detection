@@ -119,7 +119,6 @@ const CollectButton: React.FC<CollectButtonProps> = ({
     }
   };
 
-  const icon = platform === 'reddit' ? '🔴' : '✈️';
   const label = platform === 'reddit' ? 'Reddit' : 'Telegram';
   const color = platform === 'reddit' ? '#ff4500' : '#0088cc';
 
@@ -138,7 +137,6 @@ const CollectButton: React.FC<CollectButtonProps> = ({
           cursor: disabled ? 'not-allowed' : 'pointer',
         }}
       >
-        <span>{isCollecting ? '⏳' : icon}</span>
         {isCollecting ? 'COLLECTING...' : `COLLECT FROM ${label.toUpperCase()}`}
       </button>
 
@@ -147,7 +145,7 @@ const CollectButton: React.FC<CollectButtonProps> = ({
         <div style={styles.overlay} onClick={() => setShowModal(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 style={styles.modalTitle}>
-              {icon} Configure {label} Collection
+              Configure {label} Collection
             </h3>
 
             <div style={styles.field}>

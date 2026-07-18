@@ -656,6 +656,20 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
                         log_print(f"⚠️ Job {job_id}: Image error: {e}")
                         image_analysis_result = {'error': str(e), 'contains_weapons': False}
                 
+                from backend_service.utils.location_resolver import resolve_post_location
+
+                combined_for_geo = f"{post.title} {post.content or ''}"
+                geo_location = resolve_post_location(
+                    text=combined_for_geo,
+                    image_url=post.image_url if not post.is_video else None,
+                    subreddit=post.subreddit,
+                    author_flair=getattr(post, 'author_flair_text', None),
+                    link_flair=getattr(post, 'link_flair_text', None),
+                    link_url=post.url,
+                    domain=getattr(post, 'domain', None),
+                    llm_text=(llm_result or {}).get('summary') if llm_result else None,
+                )
+
                 # Build post data
                 post_data = {
                     'id': post.id,
@@ -685,7 +699,8 @@ async def run_background_collection(job_id: str, platform: str, sources: List[st
                         'flags': analysis.get('flags', []),
                         'detected_keywords': analysis.get('detected_keywords', []),
                         'detected_patterns': analysis.get('detected_patterns', [])
-                    }
+                    },
+                    'geo_location': geo_location,
                 }
                 
                 # Add post IMMEDIATELY as it completes (don't wait for others)

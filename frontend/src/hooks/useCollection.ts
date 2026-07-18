@@ -75,6 +75,7 @@ export function useCollection() {
       // LLM illegal trade analysis
       llm_analysis: postData.llm_analysis,
       risk_analysis: postData.risk_analysis,
+      geo_location: postData.geo_location || null,
     };
     
     addPost(post);

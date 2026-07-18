@@ -8,6 +8,7 @@ import HistoryPage from './pages/HistoryPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
 import MediaLibraryPage from './pages/MediaLibraryPage';
+import HeatmapPage from './pages/HeatmapPage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/threats" element={<ThreatsPage />} />
             <Route path="/media" element={<MediaLibraryPage />} />
+            <Route path="/heatmap" element={<HeatmapPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />

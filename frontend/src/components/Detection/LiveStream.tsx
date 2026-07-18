@@ -26,7 +26,6 @@ const LiveStream: React.FC<LiveStreamProps> = ({ maxItems = 20, showHeader = tru
       {showHeader && (
         <div style={styles.header}>
           <div style={styles.headerLeft}>
-            <span style={styles.icon}>📡</span>
             <h2 style={styles.title}>LIVE DETECTION STREAM</h2>
           </div>
           <div style={styles.headerRight}>
@@ -66,7 +65,6 @@ const LiveStream: React.FC<LiveStreamProps> = ({ maxItems = 20, showHeader = tru
       <div style={styles.streamContainer}>
         {displayPosts.length === 0 ? (
           <div style={styles.empty}>
-            <span style={styles.emptyIcon}>📭</span>
             <p>
               {posts.length === 0
                 ? 'No detections yet. Start collecting data to see results.'
@@ -83,7 +81,6 @@ const LiveStream: React.FC<LiveStreamProps> = ({ maxItems = 20, showHeader = tru
                 style={{
                   animation: 'slideIn 0.3s ease forwards',
                   animationDelay: `${index * 0.05}s`,
-                  opacity: 0,
                 }}
               >
                 <DetectionCard
@@ -155,9 +152,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#00ffff',
     background: 'rgba(0,255,255,0.12)',
   },
-  icon: {
-    fontSize: '20px',
-  },
   title: {
     margin: 0,
     fontSize: '14px',
@@ -196,11 +190,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '60px 20px',
     color: '#666',
     textAlign: 'center' as const,
-  },
-  emptyIcon: {
-    fontSize: '40px',
-    marginBottom: '15px',
-    opacity: 0.5,
   },
 };
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Post } from '../../context/AppContext';
 import RiskBadge from '../shared/RiskBadge';
 import { exportOsintPdf } from '../../api';
+import { getPostImageSrc } from '../../utils/mapMarkers';
 import type { OsintPdfCollectionPayload } from '../../types';
 
 interface DetailModalProps {
@@ -15,6 +16,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ post, onClose }) => {
 
   const riskLevel = post.risk_analysis?.risk_level || 'LOW';
   const riskScore = post.risk_analysis?.risk_score || 0;
+  const imageSrc = getPostImageSrc(post);
 
   const handleExportPdf = async () => {
     setPdfError(null);
@@ -135,6 +137,18 @@ const DetailModal: React.FC<DetailModalProps> = ({ post, onClose }) => {
 
         {/* Title */}
         <h2 style={styles.title}>{post.title}</h2>
+
+        {/* Media */}
+        {(imageSrc || post.is_video) && (
+          <div style={styles.mediaSection}>
+            <div style={styles.sectionLabel}>MEDIA</div>
+            {post.is_video && post.video_url ? (
+              <video src={post.video_url} controls style={styles.mediaImage} />
+            ) : imageSrc ? (
+              <img src={imageSrc} alt={post.title} style={styles.mediaImage} />
+            ) : null}
+          </div>
+        )}
 
         {/* LLM Analysis - Illegal Trade Detection */}
         {post.llm_analysis && (
@@ -415,6 +429,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 600,
     color: '#fff',
     lineHeight: 1.4,
+  },
+  mediaSection: {
+    marginBottom: '20px',
+  },
+  mediaImage: {
+    width: '100%',
+    maxHeight: '360px',
+    objectFit: 'contain' as const,
+    borderRadius: '8px',
+    border: '1px solid rgba(0,255,255,0.2)',
+    background: 'rgba(0,0,0,0.4)',
   },
   contentSection: {
     marginBottom: '20px',

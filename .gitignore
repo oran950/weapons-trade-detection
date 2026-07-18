@@ -1,8 +1,54 @@
-# Environment files
+# Environment and secrets (never commit real credentials)
 .env
-*.env
-frontend/.env
+.env.local
+.env.*.local
 backend/.env
+frontend/.env
+*.env
+!.env.example
+!**/.env.example
 
-# Data directories
+# Telegram session files (contain auth tokens)
+*.session
+*.session-journal
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+
+# Logs and runtime data
+*.log
+server.log
+backend/server.log
+
+# Collected research data (may contain scraped content)
 collected_data/
+backend/collected_data/
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/build/
+.npm
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Docker / local overrides
+.docker/
+
+# Accidental media in cache dirs
+**/__pycache__/**/*
+*.mov
+*.mp4

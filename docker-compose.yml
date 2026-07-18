@@ -94,6 +94,7 @@ services:
       - |
         echo "🔄 Pulling LLM models..."
         ollama pull llama3.2:3b
+        ollama pull llava:7b
         echo "✅ Models ready!"
     restart: "no"
 

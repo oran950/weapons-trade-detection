@@ -35,6 +35,9 @@ class RedditPost(Post):
     gallery_images: Optional[List[str]] = None  # Multiple images for gallery posts
     is_video: bool = False
     video_url: Optional[str] = None
+    author_flair_text: Optional[str] = None
+    link_flair_text: Optional[str] = None
+    domain: Optional[str] = None
     
     def __post_init__(self):
         self.platform = "reddit"
@@ -124,7 +127,10 @@ class RedditPost(Post):
             media_type=media_type,
             gallery_images=gallery_images,
             is_video=is_video,
-            video_url=video_url
+            video_url=video_url,
+            author_flair_text=getattr(submission, "author_flair_text", None) or None,
+            link_flair_text=getattr(submission, "link_flair_text", None) or None,
+            domain=getattr(submission, "domain", None) or None,
         )
 
 
