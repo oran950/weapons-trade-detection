@@ -9,8 +9,17 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend_service.entities.post import Post, RedditPost, TelegramMessage
-from backend_service.entities.analysis import AnalysisResult, RiskAssessment
-from backend_service.entities.risk import RiskLevel, RiskClassification
+from backend_service.entities.analysis import (
+    AnalysisResult,
+    RiskAssessment,
+    ExtractedEntities,
+)
+from backend_service.entities.risk import (
+    RiskLevel,
+    RiskClassification,
+    EvasionPatterns,
+    ConversationAnalysis,
+)
 
 
 class TestRedditPost:
@@ -147,6 +156,83 @@ class TestRiskClassification:
         assert classification.final_label == "HIGH"
         assert classification.risk_adjustment == 0.3
         assert len(classification.reasons) == 2
+
+    def test_from_llm_response_defaults(self):
+        classification = RiskClassification.from_llm_response({})
+        assert classification.final_label == "MEDIUM"
+        assert classification.risk_adjustment == 0.0
+        assert classification.reasons == []
+
+
+class TestRiskAssessment:
+    def _result(self, score: float) -> AnalysisResult:
+        return AnalysisResult(
+            risk_score=score,
+            confidence=0.9,
+            flags=[],
+            detected_keywords=[],
+            detected_patterns=[],
+            analysis_time="",
+            source="rules",
+        )
+
+    def test_risk_bands(self):
+        high = RiskAssessment(analysis_id="1", content_hash="h", result=self._result(0.8))
+        medium = RiskAssessment(analysis_id="2", content_hash="h", result=self._result(0.5))
+        low = RiskAssessment(analysis_id="3", content_hash="h", result=self._result(0.2))
+        assert high.is_high_risk and not high.is_low_risk
+        assert medium.is_medium_risk
+        assert low.is_low_risk
+
+    def test_to_dict(self):
+        assessment = RiskAssessment(
+            analysis_id="a1",
+            content_hash="abc",
+            result=self._result(0.75),
+            platform="reddit",
+        )
+        data = assessment.to_dict()
+        assert data["analysis_id"] == "a1"
+        assert data["result"]["risk_score"] == 0.75
+
+
+class TestExtractedEntities:
+    def test_has_transaction_indicators(self):
+        empty = ExtractedEntities()
+        assert empty.has_transaction_indicators is False
+        with_price = ExtractedEntities(prices=["$500"])
+        assert with_price.has_transaction_indicators is True
+
+
+class TestEvasionAndConversation:
+    def test_evasion_patterns(self):
+        none = EvasionPatterns(patterns_detected=[], confidence=0.0, techniques=[], original_terms={})
+        assert none.has_evasion is False
+        found = EvasionPatterns(
+            patterns_detected=["gvn"],
+            confidence=0.7,
+            techniques=["leet_speak"],
+            original_terms={"gvn": "gun"},
+        )
+        assert found.has_evasion is True
+        assert found.to_dict()["techniques"] == ["leet_speak"]
+
+    def test_conversation_analysis_to_dict(self):
+        conv = ConversationAnalysis(
+            conversation_id="c1",
+            message_count=3,
+            participants_count=2,
+            deal_progression="negotiation",
+            buyer_indicators=["need"],
+            seller_indicators=["have"],
+            negotiation_patterns=["price talk"],
+            risk_score=0.6,
+            timeline_start="2024-01-01",
+            timeline_end="2024-01-02",
+        )
+        data = conv.to_dict()
+        assert data["conversation_id"] == "c1"
+        assert data["deal_progression"] == "negotiation"
 
 
 if __name__ == "__main__":
