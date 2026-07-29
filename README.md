@@ -250,6 +250,66 @@ curl http://localhost:9000/health
 
 ---
 
+## 🧪 Tests
+
+The backend ships with a [full test suite](https://github.com/oran950/weapons-trade-detection/tree/aefeb52c4ee3b672d5fddbebfdc81abf962cfb0a/backend/tests) (`pytest`) covering the core detection logic, data models, and privacy utilities. Run it with:
+
+```bash
+cd backend
+pytest -v
+```
+
+Three representative tests (permalinks pinned to the current commit):
+
+1. **Privacy hashing** — verifies deterministic, salted, truncated author hashes: [`test_hashing.py` L10-L22](https://github.com/oran950/weapons-trade-detection/blob/aefeb52c4ee3b672d5fddbebfdc81abf962cfb0a/backend/tests/test_hashing.py#L10-L22)
+2. **Text analysis** — verifies keyword/pattern scoring of suspicious content: [`test_analyzer.py` L1-L40](https://github.com/oran950/weapons-trade-detection/blob/aefeb52c4ee3b672d5fddbebfdc81abf962cfb0a/backend/tests/test_analyzer.py#L1-L40)
+3. **Domain entities** — verifies `Post` / `Analysis` / risk model behaviour: [`test_entities.py` L1-L40](https://github.com/oran950/weapons-trade-detection/blob/aefeb52c4ee3b672d5fddbebfdc81abf962cfb0a/backend/tests/test_entities.py#L1-L40)
+
+---
+
+## 🧭 Code Map (Permalinks)
+
+Jump straight to the important parts of the codebase:
+
+- 🕵️ **Detection engine** — `WeaponsDetector.analyze()`: [detector.py L36-L120](https://github.com/oran950/weapons-trade-detection/blob/aefeb52c4ee3b672d5fddbebfdc81abf962cfb0a/backend/backend_service/core/detector.py#L36-L120)
+- 📊 **Risk scoring** — `RiskScorer.combine_scores()`: [scorer.py L24-L51](https://github.com/oran950/weapons-trade-detection/blob/aefeb52c4ee3b672d5fddbebfdc81abf962cfb0a/backend/backend_service/core/scorer.py#L24-L51)
+- 🔤 **Text analyzer** — `TextAnalyzer.analyze_text()`: [analyzer.py L87-L186](https://github.com/oran950/weapons-trade-detection/blob/aefeb52c4ee3b672d5fddbebfdc81abf962cfb0a/backend/backend_service/core/analyzer.py#L87-L186)
+- 🔒 **Privacy hashing** — `hash_username()`: [hashing.py L8-L24](https://github.com/oran950/weapons-trade-detection/blob/aefeb52c4ee3b672d5fddbebfdc81abf962cfb0a/backend/backend_service/utils/hashing.py#L8-L24)
+- 🔌 **Analyze API route** — `POST /analyze`: [detection.py L20-L51](https://github.com/oran950/weapons-trade-detection/blob/aefeb52c4ee3b672d5fddbebfdc81abf962cfb0a/backend/backend_service/entrypoints/routes/detection.py#L20-L51)
+
+---
+
+## 🖼️ Images & Videos
+
+<p align="center">
+  <img src="frontend/public/logo512.png" alt="Weapons Trade Detection logo" width="120" />
+</p>
+
+> 📸 **Screenshots / demo:** add app screenshots and a demo GIF/video here. Suggested layout:
+>
+> ```markdown
+> ![Dashboard](docs/screenshots/dashboard.png)
+> ![Media Library](docs/screenshots/media-library.png)
+>
+> https://user-images.githubusercontent.com/<upload-a-demo-video-here>.mp4
+> ```
+>
+> Tip: drag & drop an image or `.mp4` directly into a GitHub issue/PR comment to get a hosted URL you can paste here.
+
+---
+
+## 🔗 Related Projects & References
+
+- 🌐 **Live demo:** https://weapons-trade-detection.vercel.app
+- ⚡ [FastAPI](https://github.com/tiangolo/fastapi) — backend web framework
+- 📡 [sse-starlette](https://github.com/sysid/sse-starlette) — server-sent events streaming
+- 🤖 [Ollama](https://github.com/ollama/ollama) — local LLM runtime (llama3.1 / llava)
+- 👽 [PRAW](https://github.com/praw-dev/praw) — Reddit API wrapper
+- 💬 [Telethon](https://github.com/LonamiWebs/Telethon) — Telegram client library
+- ⚛️ [React](https://github.com/facebook/react) — frontend UI library
+
+---
+
 ## 🚨 Important Disclaimers
 
 > **⚠️ Academic Research Only**: This system is designed exclusively for academic research and educational purposes.
